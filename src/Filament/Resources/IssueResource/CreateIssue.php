@@ -4,7 +4,7 @@
  * All code used in this development is either the property of D3V or their client and is not to be altered or reproduced without prior written consent from either of the above.
  */
 
-namespace App\Filament\Resources\IssueResource\Pages;
+namespace D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages;
 
 use App\Filament\Resources\IssueResource;
 use App\Mail\Issue\Confirmation;

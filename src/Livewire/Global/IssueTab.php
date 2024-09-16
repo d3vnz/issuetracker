@@ -3,7 +3,7 @@
  * Copyright (c) D3V Services Limited on behalf of their client.
  * All code used in this development is either the property of D3V or their client and is not to be altered or reproduced without prior written consent from either of the above.
  */
-
+namespace D3vnz\IssueTracker\Livewire\Global;
 
 use App\Mail\Issue\Confirmation;
 use App\Models\Issue;

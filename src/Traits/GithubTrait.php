@@ -6,7 +6,7 @@
  *
  */
 
-namespace App\Traits;
+namespace D3vnz\IssueTracker\Traits;
 
 use GrahamCampbell\GitHub\Facades\GitHub;
 

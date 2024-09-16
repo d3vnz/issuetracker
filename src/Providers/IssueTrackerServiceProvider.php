@@ -4,7 +4,7 @@
  * All code used in this development is either the property of D3V or their client and is not to be altered or reproduced without prior written consent from either of the above.
  */
 
-namespace App\Providers;
+namespace D3vnz\IssueTracker\Providers;
 
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;

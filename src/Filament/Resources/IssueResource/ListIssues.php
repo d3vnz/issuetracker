@@ -6,7 +6,7 @@
  *
  */
 
-namespace App\Filament\Resources\IssueResource\Pages;
+namespace D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages;
 
 use App\Filament\Resources\IssueResource;
 use Filament\Actions\CreateAction;

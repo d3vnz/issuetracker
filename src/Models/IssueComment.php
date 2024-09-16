@@ -6,7 +6,7 @@
  *
  */
 
-namespace App\Models;
+namespace D3vnz\IssueTracker\Models;
 
 use App\Traits\GithubTrait;
 use Illuminate\Database\Eloquent\Model;

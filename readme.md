@@ -11,6 +11,18 @@ This package provides a GitHub issue tracking integration for Laravel applicatio
 ## Installation
 
 You can install the package via composer:
+    
+    composer require d3vnz/issuetracker
 
-```bash
-composer require d3vnz/issuetracker
+## Config
+In your services.php add the following:
+
+```php
+    
+        'github' => [
+            'token' => env('GITHUB_TOKEN'),
+            'owner' => env('GITHUB_OWNER'),
+            'repo' => env('GITHUB_REPO'),
+        ],
+    
+```

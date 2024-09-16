@@ -1,31 +1,35 @@
 {
-"name": "d3vnz/issuetracker",
-"description": "GitHub issue tracking integration for Laravel applications using Filament 3",
-"type": "library",
-"require": {
-"php": "^8.2",
-"laravel/framework": "^9.0",
-"filament/filament": "^3.0"
-},
-"license": "proprietary",
-"autoload": {
-"psr-4": {
-"D3vnz\\IssueTracker\\": "src/"
-}
-},
-"extra": {
-"laravel": {
-"providers": [
-"D3vnz\\IssueTracker\\Providers\\IssueTrackerProvider"
-]
-}
-},
-"authors": [
-{
-"name": "D3V Services Limited",
-"email": "info@d3v.nz"
-}
-],
-"minimum-stability": "dev",
-"prefer-stable": true
+  "name": "d3vnz/issuetracker",
+  "type": "library",
+  "description": "GitHub issue tracking integration for Laravel applications using Filament 3",
+  "keywords": ["laravel", "filament", "github", "issue-tracking"],
+  "homepage": "https://github.com/d3vnz/issuetracker",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "D3V Services Limited",
+      "email": "info@d3v.nz",
+      "homepage": "https://d3v.nz",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": "^8.0",
+    "laravel/framework": "^9.0",
+    "filament/filament": "^3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "D3vnz\\IssueTracker\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "D3vnz\\IssueTracker\\Providers\\IssueTrackerServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
 }

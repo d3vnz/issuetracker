@@ -6,13 +6,14 @@
 
 namespace D3vnz\IssueTracker\Providers;
 
+use D3vnz\IssueTracker\Livewire\Global\IssueTab;
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
-
+use Livewire\Livewire;
 class IssueTrackerServiceProvider extends ServiceProvider
 {
     /**
@@ -30,14 +31,13 @@ class IssueTrackerServiceProvider extends ServiceProvider
     {
         $this->loadViewsFrom(__DIR__.'/../../resources/views', 'd3vnz-issuetracker');
 
-//        FilamentAsset::register([
-//            Css::make('issue-css', __DIR__ . '/../../resources/css/issue-tab.css'),
-//
-//
-//        ]);
+
+        // Register Livewire component
         FilamentView::registerRenderHook(
             PanelsRenderHook::BODY_END,
-            fn(): string => Blade::render('@livewire(\'d3vnz-issuetracker::global.issue-tab\')')
+            function () {
+                return view('d3vnz-issuetracker::issue-tab');
+            }
         );
 
 //        if ($this->app->runningInConsole()) {

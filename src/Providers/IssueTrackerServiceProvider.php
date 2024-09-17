@@ -36,7 +36,7 @@ class IssueTrackerServiceProvider extends ServiceProvider
         FilamentView::registerRenderHook(
             PanelsRenderHook::BODY_END,
             function () {
-                return view('d3vnz-issuetracker::issue-tab');
+                return view('d3vnz-issuetracker::livewire.global.issue-tab');
             }
         );
 

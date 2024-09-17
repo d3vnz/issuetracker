@@ -28,14 +28,22 @@ class IssueTrackerServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        FilamentAsset::register([
-            Css::make('issue-css', __DIR__ . '/../../resources/css/issue-tab.css'),
+        $this->loadViewsFrom(__DIR__.'/../../resources/views', 'd3vnz-issuetracker');
 
-
-        ]);
+//        FilamentAsset::register([
+//            Css::make('issue-css', __DIR__ . '/../../resources/css/issue-tab.css'),
+//
+//
+//        ]);
         FilamentView::registerRenderHook(
             PanelsRenderHook::BODY_END,
-            fn(): string => Blade::render('@livewire(\'global.issue-tab\')')
+            fn(): string => Blade::render('@livewire(\'d3vnz-issuetracker::global.issue-tab\')')
         );
+
+//        if ($this->app->runningInConsole()) {
+//            $this->publishes([
+//                __DIR__.'/../../resources/css' => public_path('css/vendor/d3vnz-issuetracker'),
+//            ], 'd3vnz-issuetracker-assets');
+//        }
     }
 }

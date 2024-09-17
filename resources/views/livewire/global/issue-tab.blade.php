@@ -40,4 +40,69 @@
     <x-filament-actions::modals/>
     <link rel="stylesheet"
           href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
+    @once
+      <style>
+          .issue-engage {
+              position: fixed;
+              right: 12px;
+              bottom: 50px;
+              display: flex;
+              flex-direction: column;
+              align-items: flex-end;
+              z-index: 5;
+          }
+
+          .issue-engage-content {
+              position: absolute;
+              bottom: 100%;
+              right: 0;
+              margin-bottom: 8px;
+          }
+
+          .issue-engage .issue-engage-btn {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              flex-direction: column;
+              box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.15);
+              border: 1px solid #E4E6EF;
+              font-size: 12px;
+              font-weight: 600;
+              margin-bottom: 8px;
+              border-radius: 6px;
+              width: 66px;
+              height: 70px;
+              color: #5E6278;
+              background-color: #ffffff;
+              transition: all 0.3s ease;
+          }
+
+          .issue-engage .issue-engage-btn:hover {
+              background-color: #F5F8FA;
+              font-weight: bold;
+          }
+
+          .issue-engage .issue-engage-btn-toggle {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 35px;
+              height: 35px;
+              border-radius: 6px;
+              background-color: #ffffff;
+              box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.15);
+              transition: all 0.3s ease;
+              border: 1px solid #E4E6EF;
+          }
+
+          .issue-engage .issue-engage-btn-toggle:hover {
+              background-color: #F5F8FA;
+          }
+
+          .issue-engage .issue-engage-btn i,
+          .issue-engage .issue-engage-btn-toggle i {
+              font-size: 1.5rem;
+          }
+      </style>
+          @endonce
 </div>

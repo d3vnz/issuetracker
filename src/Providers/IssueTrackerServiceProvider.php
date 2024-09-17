@@ -14,6 +14,8 @@ use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
+use D3vnz\IssueTracker\Filament\Resources\IssueResource;
+use Filament\Facades\Filament;
 class IssueTrackerServiceProvider extends ServiceProvider
 {
     /**
@@ -31,7 +33,12 @@ class IssueTrackerServiceProvider extends ServiceProvider
     {
         $this->loadViewsFrom(__DIR__.'/../../resources/views', 'd3vnz-issuetracker');
 
-
+        Filament::serving(function () {
+            Filament::getPanel(\App\Providers\Filament\AdminPanelProvider::class)
+                ->resources([
+                    IssueResource::class,
+                ]);
+        });
         // Register Livewire component
         FilamentView::registerRenderHook(
             PanelsRenderHook::BODY_END,

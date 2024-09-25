@@ -29,7 +29,7 @@ class IssueTab extends Component implements HasForms, HasActions
 
     public function render()
     {
-        return \App\Livewire\Global\view('d3vnz-issuetracker::livewire.global.issue-tab');
+        return view('d3vnz-issuetracker::livewire.global.issue-tab');
     }
 
 

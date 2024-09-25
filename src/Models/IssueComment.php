@@ -8,10 +8,11 @@
 
 namespace D3vnz\IssueTracker\Models;
 
-use App\Traits\GithubTrait;
+use D3vnz\IssueTracker\Traits\GithubTrait;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+
 
 class IssueComment extends Model
 {
@@ -28,6 +29,6 @@ class IssueComment extends Model
 
     public function issue(): BelongsTo
     {
-        return $this->belongsTo(Issue::class);
+        return $this->belongsTo(\D3vnz\IssueTracker\Models\Issue::class);
     }
 }

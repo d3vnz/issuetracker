@@ -76,9 +76,9 @@ class CommentsRelationManager extends RelationManager
                         $comment = $issue->comments()->create([
                             'id' => $res['id'],
                             'body' => $data['body'],
-                            'user_id' => \D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\auth()->id(),
+                            'user_id' => auth()->id(),
                         ]);
-                        Mail::to('joel@d3v.nz')->send(new \D3vnz\IssueTracker\Mail\Issue\Comment($issue, $comment, \D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\auth()->user()));
+                        Mail::to('joel@d3v.nz')->send(new \D3vnz\IssueTracker\Mail\Issue\Comment($issue, $comment, auth()->user()));
                         return $comment;
                     }),
             ])
@@ -90,7 +90,7 @@ class CommentsRelationManager extends RelationManager
                             $record->setComment($record, $data, $record->id);
                             return $record->update([
                                 'body' => $data['body'],
-                                'user_id' => \D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\auth()->id(),
+                                'user_id' => auth()->id(),
                             ]);
                         })
                     ,

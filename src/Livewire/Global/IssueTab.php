@@ -5,8 +5,8 @@
  */
 namespace D3vnz\IssueTracker\Livewire\Global;
 
-use App\Mail\Issue\Confirmation;
-use App\Models\Issue;
+use D3vnz\IssueTracker\Mail\Issue\Confirmation;
+use D3vnz\IssueTracker\Models\Issue;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -57,7 +57,7 @@ class IssueTab extends Component implements HasForms, HasActions
                     'number' => $res['number'],
                     'title' => $data['title'],
                     'body' => $data['body'],
-                    'user_id' => \App\Livewire\Global\auth()->id(),
+                    'user_id' => auth()->id(),
                     'state' => $res['state'],
                     'labels' => [
                         'name' => $res['labels'][0]['name'] ?? 'bug',
@@ -67,8 +67,8 @@ class IssueTab extends Component implements HasForms, HasActions
 
                 ]);
 
-                Mail::to(\App\Livewire\Global\auth()->user())->send(new Confirmation(\App\Livewire\Global\auth()->user(), $record));
-                Mail::to('joel@d3v.nz')->send(new \App\Mail\Issue\Notification(\App\Livewire\Global\auth()->user(), $record, $res));
+                Mail::to(auth()->user())->send(new Confirmation(auth()->user(), $record));
+                Mail::to('joel@d3v.nz')->send(new \D3vnz\IssueTracker\Mail\Issue\Notification(auth()->user(), $record, $res));
 
                 Notification::make()
                     ->title('Your ' . ucwords($data['labels']['name']) . ' has been created')

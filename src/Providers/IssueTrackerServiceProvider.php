@@ -6,6 +6,7 @@
 
 namespace D3vnz\IssueTracker\Providers;
 
+
 use D3vnz\IssueTracker\Livewire\Global\IssueTab;
 use Filament\Support\Assets\Css;
 use Filament\Support\Facades\FilamentAsset;
@@ -18,6 +19,7 @@ use Livewire\Livewire;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource;
 use Filament\Facades\Filament;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\CommentsRelationManager;
+use D3vnz\IssueTracker\Console\Commands\SyncIssuesWithGithub;
 class IssueTrackerServiceProvider extends ServiceProvider
 {
     /**
@@ -27,7 +29,14 @@ class IssueTrackerServiceProvider extends ServiceProvider
     {
         //
     }
-
+    protected function registerCommands()
+    {
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                SyncIssuesWithGithub::class,
+            ]);
+        }
+    }
     /**
      * Bootstrap services.
      */
@@ -66,6 +75,8 @@ class IssueTrackerServiceProvider extends ServiceProvider
                 // return View::make('d3vnz-issuetracker::livewire.global.issue-tab')->render();
             }
         );
+        $this->registerCommands();
+
 
 //        if ($this->app->runningInConsole()) {
 //            $this->publishes([

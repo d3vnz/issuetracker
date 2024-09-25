@@ -29,3 +29,8 @@ In your services.php add the following:
         ],
     
 ```
+## Console
+Add the following to your console
+```php
+Schedule::command('github:sync-issues')->everyThirtyMinutes();
+```

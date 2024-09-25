@@ -32,14 +32,15 @@ class IssueTrackerServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
         if ($this->app->runningInConsole()) {
             $this->publishes([
-                __DIR__.'/../database/migrations' => database_path('migrations'),
+                __DIR__.'/../../database/migrations' => database_path('migrations'),
             ], 'd3vnz-issuetracker-migrations');
         }
 
         Livewire::component('d3vnz-issue-tab', IssueTab::class);
+
         $this->loadViewsFrom(__DIR__.'/../../resources/views', 'd3vnz-issuetracker');
 
         Filament::registerResources([

@@ -35,14 +35,20 @@ class IssueTrackerServiceProvider extends ServiceProvider
 
         Filament::serving(function () {
             Filament::getPanel(\App\Providers\Filament\AdminPanelProvider::class)
-                ->resources([
+                ->registerResources([
                     IssueResource::class,
                 ]);
         });
         // Register Livewire component
         FilamentView::registerRenderHook(
             PanelsRenderHook::BODY_END,
-            function () {
+            function (): string {
+                $currentUrl = request()->url();
+                if (str_contains($currentUrl, 'login'))
+                    return '';
+
+                // Check if the current route is not in the excluded list
+
                 return view('d3vnz-issuetracker::livewire.global.issue-tab');
             }
         );

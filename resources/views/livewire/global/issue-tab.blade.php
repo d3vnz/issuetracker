@@ -7,7 +7,7 @@
                  x-transition:leave="transition ease-in duration-300"
                  x-transition:leave-start="opacity-100 transform translate-y-0"
                  x-transition:leave-end="opacity-0 transform translate-y-full">
-                <a href="{{ \D3vnz\IssueTracker\Filament\Resources\IssueResource::getUrl('index') }}"
+                <a href="{{ \D3vnz\IssueTracker\Filament\Resources\IssueResource::getUrl('index', panel: \App\Providers\Filament\AdminPanelProvider::getPanel()) }}"
                    class="issue-engage-btn hover-dark">
                     <i class="las la-info-circle fs-1 pt-1 mb-2"></i>
                     Issues

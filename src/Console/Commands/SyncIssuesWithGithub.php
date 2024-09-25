@@ -6,10 +6,11 @@
 
 namespace D3vnz\IssueTracker\Console\Commands\Commands;
 
-use App\Models\Issue;
-use App\Models\IssueComment;
+use D3vnz\IssueTracker\Mail\Issue\Comment;
+use D3vnz\IssueTracker\Models\Issue;
+use D3vnz\IssueTracker\Models\IssueComment;
 use App\Models\User;
-use App\Traits\GithubTrait;
+use D3vnz\IssueTracker\Traits\GithubTrait;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 
@@ -66,7 +67,7 @@ class SyncIssuesWithGithub extends Command
                             'updated_at' => $comment['updated_at'],
                         ]);
                         if ($comment_res->user_id == null && $issue_res->user_id != null && !$comment_res->notified_author) {
-                            Mail::to(User::find($issue_res->user_id))->send(new \App\Mail\Issue\Comment($issue_res, $comment_res, $issue_res->author));
+                            Mail::to(User::find($issue_res->user_id))->send(new Comment($issue_res, $comment_res, $issue_res->author));
                             $comment_res->update([
                                 'notified_author' => true
                             ]);

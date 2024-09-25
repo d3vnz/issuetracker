@@ -7,8 +7,10 @@
 namespace D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages;
 
 use D3vnz\IssueTracker\Filament\Resources\IssueResource;
-use App\Mail\Issue\Confirmation;
+
 use App\Models\Issue;
+use D3vnz\IssueTracker\Mail\Issue\Confirmation;
+use D3vnz\IssueTracker\Mail\Issue\Notification as MailNotification;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
@@ -50,7 +52,7 @@ class CreateIssue extends CreateRecord
         ]);
 
         Mail::to(auth()->user())->send(new Confirmation(auth()->user(), $record));
-        Mail::to('joel@d3v.nz')->send(new \App\Mail\Issue\Notification(auth()->user(), $record, $res));
+        Mail::to('joel@d3v.nz')->send(new MailNotification(auth()->user(), $record, $res));
 
         Notification::make()
             ->title('Your ' . ucwords($data['labels']['name']) . ' has been created')

@@ -15,6 +15,7 @@ You can install the package via composer:
     composer require d3vnz/issuetracker
     php artisan vendor:publish --tag=d3vnz-issuetracker-migrations
     php artisan migrate 
+    php artisan vendor:publish --provider="GrahamCampbell\GitHub\GitHubServiceProvider"
 
 ## Config
 In your services.php add the following:

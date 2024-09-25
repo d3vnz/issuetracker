@@ -80,6 +80,7 @@
             .issue-engage .issue-engage-btn:hover {
                 background-color: #F5F8FA;
                 font-weight: bold;
+                cursor:pointer;
             }
 
             .issue-engage .issue-engage-btn-toggle {

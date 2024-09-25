@@ -17,6 +17,7 @@ use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource;
 use Filament\Facades\Filament;
+use D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\CommentsRelationManager;
 class IssueTrackerServiceProvider extends ServiceProvider
 {
     /**
@@ -40,7 +41,7 @@ class IssueTrackerServiceProvider extends ServiceProvider
         }
 
         Livewire::component('d3vnz-issue-tab', IssueTab::class);
-
+        Livewire::component('d3vnz.issue-tracker.filament.resources.issue-resource.relation-managers.comments-relation-manager', CommentsRelationManager::class);
         $this->loadViewsFrom(__DIR__.'/../../resources/views', 'd3vnz-issuetracker');
 
         Filament::registerResources([

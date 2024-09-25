@@ -56,7 +56,7 @@ class Comment extends Mailable
     public function content(): Content
     {
         return new Content(
-            markdown: 'mail.issue.comment',
+            markdown: 'd3vnz-issuetracker::mail.issue.comment',
         );
     }
 

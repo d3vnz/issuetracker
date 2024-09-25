@@ -46,7 +46,7 @@ class Confirmation extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            markdown: 'mail.issue.confirmation',
+            markdown: 'd3vnz-issuetracker::mail.issue.confirmation',
         );
     }
 

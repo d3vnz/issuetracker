@@ -50,7 +50,7 @@ class Notification extends Mailable implements ShouldQueue
     public function content(): Content
     {
         return new Content(
-            markdown: 'mail.issue.notification',
+            markdown: 'd3vnz-issuetracker::mail.issue.notification',
         );
     }
 

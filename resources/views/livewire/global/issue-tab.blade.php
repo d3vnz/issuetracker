@@ -103,6 +103,17 @@
             .issue-engage .issue-engage-btn-toggle i {
                 font-size: 1.5rem;
             }
+            .dark .issue-engage .issue-engage-btn,
+            .dark .issue-engage .issue-engage-btn-toggle {
+                background-color: var(--gray-800);
+                border-color: var(--gray-700);
+                color: var(--gray-300);
+            }
+
+            .dark .issue-engage .issue-engage-btn:hover,
+            .dark .issue-engage .issue-engage-btn-toggle:hover {
+                background-color: var(--gray-700);
+            }
         </style>
     @endonce
 </div>

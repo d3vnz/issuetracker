@@ -13,6 +13,7 @@ This package provides a GitHub issue tracking integration for Laravel applicatio
 You can install the package via composer:
     
     composer require d3vnz/issuetracker
+    php artisan migrate 
 
 ## Config
 In your services.php add the following:

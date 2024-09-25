@@ -6,7 +6,7 @@
 
 namespace D3vnz\IssueTracker\Models;
 
-use App\Traits\GithubTrait;
+use D3vnz\IssueTracker\Traits\GithubTrait;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -38,7 +38,7 @@ class Issue extends Model
 
     public function author(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(\App\Models\User::class, 'user_id');
     }
 
     public static function getForm($issueType = null): array

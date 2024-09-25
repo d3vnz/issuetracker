@@ -32,6 +32,8 @@ class IssueTrackerServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        Livewire::component('d3vnz-issue-tab', IssueTab::class);
         $this->loadViewsFrom(__DIR__.'/../../resources/views', 'd3vnz-issuetracker');
 
         Filament::registerResources([
@@ -46,8 +48,14 @@ class IssueTrackerServiceProvider extends ServiceProvider
                     return '';
 
                 // Check if the current route is not in the excluded list
+                try {
+                    return Blade::render('<livewire:d3vnz-issue-tab />');
+                } catch (\Exception $e) {
+                    // Log the error or handle it as needed
 
-                return View::make('d3vnz-issuetracker::livewire.global.issue-tab')->render();
+                    return ''; // Return an empty string in case of an error
+                }
+                // return View::make('d3vnz-issuetracker::livewire.global.issue-tab')->render();
             }
         );
 

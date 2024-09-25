@@ -8,7 +8,7 @@
 
 namespace D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages;
 
-use App\Filament\Resources\IssueResource;
+use D3vnz\IssueTracker\Filament\Resources\IssueResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
 

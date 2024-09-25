@@ -7,8 +7,8 @@
 namespace D3vnz\IssueTracker\Filament\Resources;
 
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages;
-use App\Filament\Resources\IssueResource\RelationManagers\CommentsRelationManager;
-use App\Models\Issue;
+use D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\CommentsRelationManager;
+use D3vnz\IssueTracker\Models\Issue;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;

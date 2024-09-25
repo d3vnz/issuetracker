@@ -6,7 +6,7 @@
 
 namespace D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages;
 
-use App\Filament\Resources\IssueResource;
+use D3vnz\IssueTracker\Filament\Resources\IssueResource;
 use App\Mail\Issue\Confirmation;
 use App\Models\Issue;
 use Filament\Notifications\Notification;

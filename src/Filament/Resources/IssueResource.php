@@ -6,7 +6,7 @@
 
 namespace D3vnz\IssueTracker\Filament\Resources;
 
-use App\Filament\Resources\IssueResource\Pages;
+use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages;
 use App\Filament\Resources\IssueResource\RelationManagers\CommentsRelationManager;
 use App\Models\Issue;
 use Filament\Forms\Form;
@@ -15,6 +15,9 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\ListIssues;
+use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\CreateIssue;
+use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\EditIssue;
 
 class IssueResource extends Resource
 {
@@ -83,9 +86,9 @@ class IssueResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListIssues::route('/'),
-            'create' => Pages\CreateIssue::route('/create'),
-            'edit' => Pages\EditIssue::route('/{record}/edit'),
+            'index' => ListIssues::route('/'),
+            'create' => CreateIssue::route('/create'),
+            'edit' => EditIssue::route('/{record}/edit'),
         ];
     }
 

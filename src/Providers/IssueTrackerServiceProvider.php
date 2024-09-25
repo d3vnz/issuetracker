@@ -12,6 +12,7 @@ use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource;
@@ -33,12 +34,9 @@ class IssueTrackerServiceProvider extends ServiceProvider
     {
         $this->loadViewsFrom(__DIR__.'/../../resources/views', 'd3vnz-issuetracker');
 
-        Filament::serving(function () {
-            Filament::getPanel(\App\Providers\Filament\AdminPanelProvider::class)
-                ->registerResources([
-                    IssueResource::class,
-                ]);
-        });
+        Filament::registerResources([
+            IssueResource::class,
+        ]);
         // Register Livewire component
         FilamentView::registerRenderHook(
             PanelsRenderHook::BODY_END,
@@ -49,7 +47,7 @@ class IssueTrackerServiceProvider extends ServiceProvider
 
                 // Check if the current route is not in the excluded list
 
-                return view('d3vnz-issuetracker::livewire.global.issue-tab');
+                return View::make('d3vnz-issuetracker::livewire.global.issue-tab')->render();
             }
         );
 

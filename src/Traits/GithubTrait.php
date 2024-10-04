@@ -32,7 +32,7 @@ trait GithubTrait
 
     public function updateIssue($id, $data)
     {
-        return GitHub::issue()->update(config('services.github.owner'), config('services.github.repo'), 1, $data);
+        return GitHub::issue()->update(config('services.github.owner'), config('services.github.repo'), $id, $data);
     }
 
     public function removeIssue($issue)

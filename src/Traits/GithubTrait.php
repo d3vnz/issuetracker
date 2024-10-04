@@ -24,7 +24,7 @@ trait GithubTrait
     public function getIssues($status = null): array|null
     {
         if ($status == null) {
-            $status = ['open', 'closed'];
+            $status = ['state' => 'all'];
         }
 
         return GitHub::issues()->all(config('services.github.owner'), config('services.github.repo'), $status);

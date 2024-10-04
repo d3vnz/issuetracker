@@ -46,34 +46,39 @@ class IssueResource extends Resource
             ->query(function () {
                 return Issue::query()->whereNull('deleted_at');
             })
+            ->paginated(false)
             ->columns([
                 TextColumn::make('title')
                     ->label('Issue Title'),
                 TextColumn::make('author.name')
                     ->label('Logged By'),
-                TextColumn::make('labels.name')
-                    ->color(function ($state) {
-
-                        switch ($state) {
-                            case 'bug':
-                                return 'danger';
-                            case 'enhancement':
-                                return 'warning';
-                            case 'feature request':
-                                return 'success';
+                TextColumn::make('state')
+                    ->label('Status')
+                    ->color(function($state){
+                        if($state == 'open'){
+                            return 'gray';
+                        }else{
+                            return 'success';
                         }
-
-
                     })
-                    ->badge()
-                    ->label('Issue Type'),
+                    ->badge(),
                 TextColumn::make('updated_at')
                     ->label('Last Updated')
                     ->since()
                     ->alignRight()
             ])
+            ->defaultSort('updated_at', 'desc')
+            ->defaultPaginationPageOption(25)
             ->filters([
-                //  TrashedFilter::make(),
+                \Filament\Tables\Filters\TernaryFilter::make('state')
+                    ->placeholder('Request Status')
+                    ->trueLabel('Open')
+                    ->falseLabel('Closed')
+                    ->queries(
+                        true: fn (Builder $query) => $query->where('state','open'),
+                        false: fn (Builder $query) => $query->where('state','closed'),
+                        blank: fn (Builder $query) => $query, // In this example, we do not want to filter the query when it is blank.
+                    )
             ])
             ->actions([
 //                EditAction::make(),

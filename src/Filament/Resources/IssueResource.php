@@ -52,6 +52,14 @@ class IssueResource extends Resource
                     ->label('Issue Title'),
                 TextColumn::make('author.name')
                     ->label('Logged By'),
+                \Filament\Tables\Columns\IconColumn::make('has_notes')
+                    ->label('Comments')
+                    ->boolean()
+                    ->trueIcon('la-comment-solid')
+                    ->falseIcon('heroicon-o-x-mark')
+                    ->state(function ($record) {
+                        return $record->comments()->exists();
+                    }),
                 TextColumn::make('state')
                     ->label('Status')
                     ->color(function($state){

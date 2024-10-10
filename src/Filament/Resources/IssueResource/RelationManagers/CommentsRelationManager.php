@@ -29,7 +29,6 @@ class CommentsRelationManager extends RelationManager
             ->schema([
                 Forms\Components\RichEditor::make('body')
                     ->required()
-
                     ->hiddenLabel()
                     ->columnSpanFull(),
             ]);

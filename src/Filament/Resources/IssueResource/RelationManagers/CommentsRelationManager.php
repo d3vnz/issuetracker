@@ -29,7 +29,7 @@ class CommentsRelationManager extends RelationManager
             ->schema([
                 Forms\Components\RichEditor::make('body')
                     ->required()
-                    ->maxLength(255)
+
                     ->hiddenLabel()
                     ->columnSpanFull(),
             ]);

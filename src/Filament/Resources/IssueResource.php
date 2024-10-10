@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\ListIssues;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\CreateIssue;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\EditIssue;
-
+use Illuminate\Support\Facades\Mail;
 class IssueResource extends Resource
 {
     protected static ?string $model = Issue::class;
@@ -101,8 +101,17 @@ class IssueResource extends Resource
                     ->visible(function(?Model $record){
                         return $record->state != 'open';
                     })
-                    ->requiresConfirmation()
-                    ->action(function(?Model $record){
+                    ->form(function(){
+                        return [
+                            Forms\Components\RichEditor::make('body')
+                                ->required()
+
+
+                            ->columnSpanFull()
+                            ->label('Reason for Reopening')
+                        ];
+                    })
+                    ->action(function(array $data, ?Model $record){
 
                         $record->update([
                             'state' => 'open',
@@ -111,6 +120,16 @@ class IssueResource extends Resource
                         $record->updateIssue($record->number, [
                             'state' => 'open'
                         ]);
+
+                        if(isset($data['body']) && $data['body'] != ''){
+                            $res = $record->setComment($record, $data);
+                            $comment = $record->comments()->create([
+                                'id' => $res['id'],
+                                'body' => $data['body'],
+                                'user_id' => auth()->id(),
+                            ]);
+                            Mail::to('joel@d3v.nz')->send(new \D3vnz\IssueTracker\Mail\Issue\Comment($record, $comment, auth()->user()));
+                        }
 
 
                     })

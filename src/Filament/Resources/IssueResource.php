@@ -11,8 +11,10 @@ use D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\Comment
 use D3vnz\IssueTracker\Models\Issue;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\ListIssues;
@@ -74,6 +76,22 @@ class IssueResource extends Resource
                     ->label('Last Updated')
                     ->since()
                     ->alignRight()
+            ])
+            ->actions([
+                Action::make('Close Issue')
+                    ->requiresConfirmation()
+                    ->action(function(?Model $record){
+
+                        $record->update([
+                            'state' => 'closed',
+                            'closed_at' => now()
+                        ]);
+                        $record->updateIssue($record->number, [
+                            'state' => 'closed'
+                        ]);
+
+
+                    })
             ])
             ->defaultSort('updated_at', 'desc')
             ->defaultPaginationPageOption(25)

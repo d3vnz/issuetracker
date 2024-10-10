@@ -105,12 +105,6 @@ class IssueResource extends Resource
                         false: fn (Builder $query) => $query->where('state','closed'),
                         blank: fn (Builder $query) => $query, // In this example, we do not want to filter the query when it is blank.
                     )
-            ])
-            ->actions([
-//                EditAction::make(),
-//                DeleteAction::make(),
-//                RestoreAction::make(),
-//                ForceDeleteAction::make(),
             ]);
     }
 

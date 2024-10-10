@@ -83,6 +83,8 @@ class IssueResource extends Resource
                         return $record->state != 'closed';
                     })
                     ->requiresConfirmation()
+                    ->color('danger')
+
                     ->action(function(?Model $record){
 
                         $record->update([
@@ -91,6 +93,23 @@ class IssueResource extends Resource
                         ]);
                         $record->updateIssue($record->number, [
                             'state' => 'closed'
+                        ]);
+
+
+                    }),
+                Action::make('Reopen Issue')
+                    ->visible(function(?Model $record){
+                        return $record->state != 'open';
+                    })
+                    ->requiresConfirmation()
+                    ->action(function(?Model $record){
+
+                        $record->update([
+                            'state' => 'open',
+                            'closed_at' => null
+                        ]);
+                        $record->updateIssue($record->number, [
+                            'state' => 'open'
                         ]);
 
 

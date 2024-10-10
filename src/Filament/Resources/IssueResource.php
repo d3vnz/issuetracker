@@ -79,6 +79,9 @@ class IssueResource extends Resource
             ])
             ->actions([
                 Action::make('Close Issue')
+                    ->visible(function(?Model $record){
+                        return $record->state != 'closed';
+                    })
                     ->requiresConfirmation()
                     ->action(function(?Model $record){
 

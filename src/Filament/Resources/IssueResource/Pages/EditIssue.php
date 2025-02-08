@@ -27,7 +27,7 @@ class EditIssue extends EditRecord
         $record->update([
             'title' => $data['title'],
             'body' => $data['body'],
-            'user_id' => auth()->id()
+            'user_id' => $record == null ? auth()->id() : $record->user_id
         ]);
 
 

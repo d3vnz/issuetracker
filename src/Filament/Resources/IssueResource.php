@@ -8,8 +8,10 @@ namespace D3vnz\IssueTracker\Filament\Resources;
 
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\CommentsRelationManager;
+use D3vnz\IssueTracker\Mail\Issue\Comment;
 use D3vnz\IssueTracker\Models\Issue;
 use Filament\Forms\Form;
+use D3vnz\IssueTracker\Mail\Issue\Closure;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
@@ -95,6 +97,8 @@ class IssueResource extends Resource
                         $record->updateIssue($record->number, [
                             'state' => 'closed'
                         ]);
+
+                        Mail::to(User::find($record->user_id))->send(new Closure(User::find($record->user_id),$record));
 
 
                     }),

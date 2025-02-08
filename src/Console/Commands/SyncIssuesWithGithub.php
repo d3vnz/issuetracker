@@ -42,8 +42,9 @@ class SyncIssuesWithGithub extends Command
             foreach ($issues as $issue) {
                 $issue_res = Issue::updateOrCreate([
                     'id' => $issue['id'],
-                    'number' => $issue['number'],
+
                 ], [
+                    'number' => $issue['number'],
                     'title' => $issue['title'],
                     'body' => $issue['body'],
                     'state' => $issue['state'],

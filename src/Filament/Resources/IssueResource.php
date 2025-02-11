@@ -98,7 +98,7 @@ class IssueResource extends Resource
                             'state' => 'closed'
                         ]);
 
-                        Mail::to(User::find($record->user_id))->send(new Closure(User::find($record->user_id),$record));
+                        Mail::to(User::find($record->user_id))->send(new Closure(\App\Models\User::find($record->user_id),$record));
 
 
                     }),

@@ -3,7 +3,7 @@
 Dear {{ $to_name }},
 
 {{ $origin }} has added a new comment to the issue {{ $request->title }}.
-    {{ strip_tags($comment->body) }}
+    {{ isset($comment->body) ? strip_tags($comment->body) : '' }}
 
 
 

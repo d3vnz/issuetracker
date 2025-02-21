@@ -24,6 +24,8 @@ use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\ListIssues;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\CreateIssue;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\EditIssue;
 use Illuminate\Support\Facades\Mail;
+use Filament\Tables\Actions\ActionGroup;
+
 class IssueResource extends Resource
 {
     protected static ?string $model = Issue::class;
@@ -81,6 +83,7 @@ class IssueResource extends Resource
                     ->alignRight()
             ])
             ->actions([
+                ActionGroup::make([
                 Action::make('Close Issue')
                     ->visible(function(?Model $record){
                         return $record->state != 'closed';
@@ -138,8 +141,10 @@ class IssueResource extends Resource
 
 
                     })
+                    ]),
             ])
             ->defaultSort('updated_at', 'desc')
+            ->persistFiltersInSession()
             ->defaultPaginationPageOption(25)
             ->filters([
                 \Filament\Tables\Filters\TernaryFilter::make('state')
@@ -151,7 +156,8 @@ class IssueResource extends Resource
                         false: fn (Builder $query) => $query->where('state','closed'),
                         blank: fn (Builder $query) => $query, // In this example, we do not want to filter the query when it is blank.
                     )
-            ]);
+            ])
+            ;
     }
 
     public static function getPages(): array

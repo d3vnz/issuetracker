@@ -53,7 +53,7 @@ class Issue extends Model
                         if ($issueType) {
                             return $issueType;
                         }
-                        return $record->labels['id'] ?? null;
+                        return $record->labels['name'] ?? null;
                     })
                     ->label('Issue Type')
                     ->options(function () {

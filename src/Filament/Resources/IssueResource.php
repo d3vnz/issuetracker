@@ -53,9 +53,19 @@ class IssueResource extends Resource
             ->query(function () {
                 return Issue::query()->whereNull('deleted_at');
             })
+            ->recordClasses(function (Model $record) {
+
+                $titleClasses = str_contains(strtolower($record->title), 'urgent')
+                    ? 'urgent'
+                    : '';
+
+                // Combine both sets of classes
+                return trim("$titleClasses");
+            })
             ->paginated(false)
             ->columns([
                 TextColumn::make('title')
+                    ->searchable()
                     ->label('Issue Title'),
                 TextColumn::make('author.name')
                     ->label('Logged By'),
@@ -77,10 +87,17 @@ class IssueResource extends Resource
                         }
                     })
                     ->badge(),
-                TextColumn::make('updated_at')
-                    ->label('Last Updated')
+                TextColumn::make('created_at')
+                    ->label('Created')
                     ->since()
-                    ->alignRight()
+                    ->sortable()
+                    ->alignRight(),
+                TextColumn::make('closed_at')
+                    ->label('Closed')
+                    ->since()
+                    ->sortable()
+                    ->placeholder('Sill Open')
+                    ->alignEnd(),
             ])
             ->actions([
                 ActionGroup::make([

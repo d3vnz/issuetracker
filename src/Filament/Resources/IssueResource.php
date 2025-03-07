@@ -170,7 +170,7 @@ class IssueResource extends Resource
             ])
             ->defaultSort('updated_at', 'desc')
             ->persistFiltersInSession()
-            ->persistFilters()
+
             ->defaultPaginationPageOption(25)
             ->filters([
                 \Filament\Tables\Filters\TernaryFilter::make('state')

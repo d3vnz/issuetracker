@@ -67,6 +67,14 @@ class IssueResource extends Resource
                 TextColumn::make('title')
                     ->searchable()
                     ->label('Issue Title'),
+                TextColumn::make('labels')
+                    ->alignCenter()
+                    ->placeholder('None')
+                    ->formatStateUsing(function (?Model $record): \Illuminate\Support\HtmlString|null {
+                        return isset($record->labels['name']) ? new \Illuminate\Support\HtmlString('<span style="color:#'.$record->labels['color'].'">'.$record->labels['name'].'</span>') : null;
+                    })
+
+                    ->label('Request Type'),
                 TextColumn::make('author.name')
                     ->label('Logged By'),
                 \Filament\Tables\Columns\IconColumn::make('has_notes')
@@ -101,67 +109,68 @@ class IssueResource extends Resource
             ])
             ->actions([
                 ActionGroup::make([
-                Action::make('Close Issue')
-                    ->visible(function(?Model $record){
-                        return $record->state != 'closed';
-                    })
-                    ->requiresConfirmation()
-                    ->color('danger')
+                    Action::make('Close Issue')
+                        ->visible(function(?Model $record){
+                            return $record->state != 'closed';
+                        })
+                        ->requiresConfirmation()
+                        ->color('danger')
 
-                    ->action(function(?Model $record){
+                        ->action(function(?Model $record){
 
-                        $record->update([
-                            'state' => 'closed',
-                            'closed_at' => now()
-                        ]);
-                        $record->updateIssue($record->number, [
-                            'state' => 'closed'
-                        ]);
-
-                        Mail::to(\App\Models\User::find($record->user_id))->send(new Closure(\App\Models\User::find($record->user_id),$record));
-
-
-                    }),
-                Action::make('Reopen Issue')
-                    ->visible(function(?Model $record){
-                        return $record->state != 'open';
-                    })
-                    ->form(function(){
-                        return [
-                            Forms\Components\RichEditor::make('body')
-                                ->required()
-
-
-                            ->columnSpanFull()
-                            ->label('Reason for Reopening')
-                        ];
-                    })
-                    ->action(function(array $data, ?Model $record){
-
-                        $record->update([
-                            'state' => 'open',
-                            'closed_at' => null
-                        ]);
-                        $record->updateIssue($record->number, [
-                            'state' => 'open'
-                        ]);
-
-                        if(isset($data['body']) && $data['body'] != ''){
-                            $res = $record->setComment($record, $data);
-                            $comment = $record->comments()->create([
-                                'id' => $res['id'],
-                                'body' => $data['body'],
-                                'user_id' => auth()->id(),
+                            $record->update([
+                                'state' => 'closed',
+                                'closed_at' => now()
                             ]);
-                            Mail::to('joel@d3v.nz')->send(new \D3vnz\IssueTracker\Mail\Issue\Comment($record, $comment, auth()->user()));
-                        }
+                            $record->updateIssue($record->number, [
+                                'state' => 'closed'
+                            ]);
+
+                            Mail::to(\App\Models\User::find($record->user_id))->send(new Closure(\App\Models\User::find($record->user_id),$record));
 
 
-                    })
-                    ]),
+                        }),
+                    Action::make('Reopen Issue')
+                        ->visible(function(?Model $record){
+                            return $record->state != 'open';
+                        })
+                        ->form(function(){
+                            return [
+                                Forms\Components\RichEditor::make('body')
+                                    ->required()
+
+
+                                    ->columnSpanFull()
+                                    ->label('Reason for Reopening')
+                            ];
+                        })
+                        ->action(function(array $data, ?Model $record){
+
+                            $record->update([
+                                'state' => 'open',
+                                'closed_at' => null
+                            ]);
+                            $record->updateIssue($record->number, [
+                                'state' => 'open'
+                            ]);
+
+                            if(isset($data['body']) && $data['body'] != ''){
+                                $res = $record->setComment($record, $data);
+                                $comment = $record->comments()->create([
+                                    'id' => $res['id'],
+                                    'body' => $data['body'],
+                                    'user_id' => auth()->id(),
+                                ]);
+                                Mail::to('joel@d3v.nz')->send(new \D3vnz\IssueTracker\Mail\Issue\Comment($record, $comment, auth()->user()));
+                            }
+
+
+                        })
+                ]),
             ])
             ->defaultSort('updated_at', 'desc')
             ->persistFiltersInSession()
+            ->persistFilters()
             ->defaultPaginationPageOption(25)
             ->filters([
                 \Filament\Tables\Filters\TernaryFilter::make('state')
@@ -173,6 +182,19 @@ class IssueResource extends Resource
                         false: fn (Builder $query) => $query->where('state','closed'),
                         blank: fn (Builder $query) => $query, // In this example, we do not want to filter the query when it is blank.
                     )
+                    ->default(true),
+                \Filament\Tables\Filters\SelectFilter::make('label')
+                    ->options(function(){
+                        $issue = new Issue();
+                        return collect($issue->getLabels())->pluck('name', 'name');
+                    })
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (empty($data['value'])) {
+                            return $query;
+                        }
+
+                        return $query->whereJsonContains('labels', ['name' => $data['value']]);
+                    })
             ])
             ;
     }
@@ -204,5 +226,21 @@ class IssueResource extends Resource
     public static function getGloballySearchableAttributes(): array
     {
         return [];
+    }
+    protected function getContrastColor($hexColor)
+    {
+        // Remove # if present
+        $hexColor = ltrim($hexColor, '#');
+
+        // Convert to RGB
+        $r = hexdec(substr($hexColor, 0, 2));
+        $g = hexdec(substr($hexColor, 2, 2));
+        $b = hexdec(substr($hexColor, 4, 2));
+
+        // Calculate luminance - standard formula for contrast
+        $luminance = (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255;
+
+        // Return black or white based on luminance
+        return $luminance > 0.5 ? '#000000' : '#ffffff';
     }
 }

@@ -188,6 +188,7 @@ class IssueResource extends Resource
                         $issue = new Issue();
                         return collect($issue->getLabels())->pluck('name', 'name');
                     })
+                    ->default('bug')
                     ->query(function (Builder $query, array $data): Builder {
                         if (empty($data['value'])) {
                             return $query;

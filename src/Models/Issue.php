@@ -66,7 +66,8 @@ class Issue extends Model
                     }),
                 Placeholder::make('created_at')->label('Issue Created')
                     ->columnSpan(3)
-                    ->content(fn(?Model $record): string => $record->created_at->format('D dS M Y H:i')),
+                    ->visible(fn(?Model $record) => isset($record->created_at))
+                    ->content(fn(?Model $record): string => isset($record->created_at) ? $record->created_at->format('D dS M Y H:i') : null),
             ]),
             RichEditor::make('body')
                 ->label('Issue / Request Description')

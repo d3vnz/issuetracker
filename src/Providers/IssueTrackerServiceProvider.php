@@ -42,43 +42,46 @@ class IssueTrackerServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
-        if ($this->app->runningInConsole()) {
-            $this->publishes([
-                __DIR__.'/../../database/migrations' => database_path('migrations'),
-            ], 'd3vnz-issuetracker-migrations');
-        }
+        if(config('app.env') === 'production' || env('ENABLE_ISSUE_TRACKER', true)) {
 
-        Livewire::component('d3vnz-issue-tab', IssueTab::class);
-        Livewire::component('d3vnz.issue-tracker.filament.resources.issue-resource.relation-managers.comments-relation-manager', CommentsRelationManager::class);
-        Livewire::component('d3vnz-issue-tracker.filament.resources.issue-resource.pages.list-issues', \D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\ListIssues::class);
-        Livewire::component('d3vnz-issue-tracker.filament.resources.issue-resource.pages.edit-issue', \D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\EditIssue::class);
-        Livewire::component('d3vnz-issue-tracker.filament.resources.issue-resource.pages.create-issue', \D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\CreateIssue::class);
-        $this->loadViewsFrom(__DIR__.'/../../resources/views', 'd3vnz-issuetracker');
-
-        Filament::registerResources([
-            IssueResource::class,
-        ]);
-        // Register Livewire component
-        FilamentView::registerRenderHook(
-            PanelsRenderHook::BODY_END,
-            function (): string {
-                $currentUrl = request()->url();
-                if (str_contains($currentUrl, 'login'))
-                    return '';
-
-                // Check if the current route is not in the excluded list
-                try {
-                    return Blade::render('<livewire:d3vnz-issue-tab />');
-                } catch (\Exception $e) {
-                    // Log the error or handle it as needed
-
-                    return ''; // Return an empty string in case of an error
-                }
-                // return View::make('d3vnz-issuetracker::livewire.global.issue-tab')->render();
+            $this->loadMigrationsFrom(__DIR__ . '/../../database/migrations');
+            if ($this->app->runningInConsole()) {
+                $this->publishes([
+                    __DIR__ . '/../../database/migrations' => database_path('migrations'),
+                ], 'd3vnz-issuetracker-migrations');
             }
-        );
-        $this->registerCommands();
+
+            Livewire::component('d3vnz-issue-tab', IssueTab::class);
+            Livewire::component('d3vnz.issue-tracker.filament.resources.issue-resource.relation-managers.comments-relation-manager', CommentsRelationManager::class);
+            Livewire::component('d3vnz-issue-tracker.filament.resources.issue-resource.pages.list-issues', \D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\ListIssues::class);
+            Livewire::component('d3vnz-issue-tracker.filament.resources.issue-resource.pages.edit-issue', \D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\EditIssue::class);
+            Livewire::component('d3vnz-issue-tracker.filament.resources.issue-resource.pages.create-issue', \D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\CreateIssue::class);
+            $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'd3vnz-issuetracker');
+
+            Filament::registerResources([
+                IssueResource::class,
+            ]);
+            // Register Livewire component
+            FilamentView::registerRenderHook(
+                PanelsRenderHook::BODY_END,
+                function (): string {
+                    $currentUrl = request()->url();
+                    if (str_contains($currentUrl, 'login'))
+                        return '';
+
+                    // Check if the current route is not in the excluded list
+                    try {
+                        return Blade::render('<livewire:d3vnz-issue-tab />');
+                    } catch (\Exception $e) {
+                        // Log the error or handle it as needed
+
+                        return ''; // Return an empty string in case of an error
+                    }
+                    // return View::make('d3vnz-issuetracker::livewire.global.issue-tab')->render();
+                }
+            );
+            $this->registerCommands();
+        }
 
 
 //        if ($this->app->runningInConsole()) {

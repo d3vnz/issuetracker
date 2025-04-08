@@ -1,14 +1,5 @@
 <div>
     @if(auth()->check() && auth()->user()->isAdmin())
-        <div class="d-flex justify-content-between align-items-center">
-            <h1 class="text-dark mb-0">Issues</h1>
-            <div class="d-flex align-items-center">
-                <a href="{{ \D3vnz\IssueTracker\Filament\Resources\IssueResource::getUrl('index') }}"
-                   class="btn btn-primary">View All</a>
-                <a href="{{ \D3vnz\IssueTracker\Filament\Resources\IssueResource::getUrl('create') }}"
-                   class="btn btn-success">Create</a>
-            </div>
-        </div>
     <div x-data="{ isOpen: false }" class="issue-engage" id="kt_app_engage">
         <div class="issue-engage-content">
             <div x-show="isOpen" x-transition:enter="transition ease-out duration-300"

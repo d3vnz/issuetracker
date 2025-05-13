@@ -4,7 +4,12 @@
 {{ $user->name }} has created a new issue for {{ config('app.name')}} {{ $issue->title }}.
 
 # Issue
-     {{ strip_tags($comment->body) }}
+ @isset($comment->body)
+{{ strip_tags($comment->body) }}
+@endisset
+@isset($issue->body))
+{{ strip_tags($issue->body) }}
+@endisset
 <x-mail::button :url="$url">
 View Issue
 </x-mail::button>

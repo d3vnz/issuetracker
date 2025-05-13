@@ -21,6 +21,7 @@ class Notification extends Mailable implements ShouldQueue
     public $issue;
     private $result;
     public $url;
+    public $comment;
 
     /**
      * Create a new message instance.
@@ -30,6 +31,7 @@ class Notification extends Mailable implements ShouldQueue
         //
         $this->user = $user;
         $this->issue = $issue;
+        $this->comment = $issue;
         $this->url = $result['html_url'];
 
     }

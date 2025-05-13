@@ -54,6 +54,7 @@ class CreateIssue extends CreateRecord
         Mail::to(auth()->user())->send(new Confirmation(auth()->user(), $record));
         Mail::to('joel@d3v.nz')->send(new MailNotification(auth()->user(), $record, $res));
 
+
         Notification::make()
             ->title('Your ' . ucwords($data['labels']['name']) . ' has been created')
             ->body('A developer will respond to you if required and you will be notified via email as well of any updates.')

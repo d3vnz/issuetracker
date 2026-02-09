@@ -74,6 +74,19 @@ class IssueResource extends Resource
                         return isset($record->labels['name']) ? new \Illuminate\Support\HtmlString('<span style="color:#'.$record->labels['color'].'">'.$record->labels['name'].'</span>') : null;
                     })
 
+                    ->badge()
+                    ->color(function(?Model $record){
+                        if(isset($record->labels['name'])){
+                            if($record->labels['name'] == 'bug'){
+                                return 'danger';
+                            }elseif($record->labels['name'] == 'feature'){
+                                return 'success';
+                            }elseif($record->labels['name'] == 'change'){
+                                return 'warning';
+                                }
+                        }
+                        return 'primary';
+                    })
                     ->label('Request Type'),
                 TextColumn::make('author.name')
                     ->label('Logged By'),
@@ -95,8 +108,8 @@ class IssueResource extends Resource
                         }
                     })
                     ->badge(),
-                TextColumn::make('created_at')
-                    ->label('Created')
+                TextColumn::make('updated_at')
+                    ->label('Age')
                     ->since()
                     ->sortable()
                     ->alignRight(),

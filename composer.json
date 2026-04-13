@@ -34,6 +34,9 @@
       ]
     }
   },
+  "suggest": {
+    "ext-openai": "Set OPENAI_API_KEY and ISSUETRACKER_AI_ENABLED=true to enable AI-assisted triage of new issues (duplicate detection + automatic request-for-more-info emails)."
+  },
   "minimum-stability": "dev",
   "prefer-stable": true
 }

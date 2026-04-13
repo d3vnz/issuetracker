@@ -8,6 +8,8 @@ namespace D3vnz\IssueTracker\Providers;
 
 
 use D3vnz\IssueTracker\Console\Commands\SyncIssuesWithGithub;
+use D3vnz\IssueTracker\Jobs\AnalyzeIssueJob;
+use D3vnz\IssueTracker\Models\Issue;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\CommentsRelationManager;
 use Filament\Facades\Filament;
@@ -22,6 +24,8 @@ class IssueTrackerServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->mergeConfigFrom(__DIR__ . '/../../config/issuetracker.php', 'issuetracker');
+
         if (! class_exists(\Filament\Forms\Form::class, false)
             && ! interface_exists(\Filament\Forms\Form::class, false)
             && class_exists(\Filament\Schemas\Schema::class)) {
@@ -50,6 +54,16 @@ class IssueTrackerServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__ . '/../../database/migrations' => database_path('migrations'),
             ], 'd3vnz-issuetracker-migrations');
+
+            $this->publishes([
+                __DIR__ . '/../../config/issuetracker.php' => config_path('issuetracker.php'),
+            ], 'd3vnz-issuetracker-config');
+        }
+
+        if (config('issuetracker.ai.enabled')) {
+            Issue::created(function (Issue $issue): void {
+                AnalyzeIssueJob::dispatch($issue);
+            });
         }
 
         Livewire::component('d3vnz-issue-quick-action', \D3vnz\IssueTracker\Livewire\Global\IssueQuickAction::class);

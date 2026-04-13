@@ -21,21 +21,6 @@ class ListIssues extends ListRecords
 {
     protected static string $resource = IssueResource::class;
 
-    public function mount(): void
-    {
-        parent::mount();
-
-        $type = request()->query('create');
-        if ($type) {
-            $this->js(
-                '$wire.mountAction(' .
-                json_encode('createIssue') . ', ' .
-                json_encode(['type' => $type]) .
-                ')'
-            );
-        }
-    }
-
     protected function getHeaderActions(): array
     {
         return [

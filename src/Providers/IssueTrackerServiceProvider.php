@@ -48,6 +48,7 @@ class IssueTrackerServiceProvider extends ServiceProvider
             ], 'd3vnz-issuetracker-migrations');
         }
 
+        Livewire::component('d3vnz-issue-quick-action', \D3vnz\IssueTracker\Livewire\Global\IssueQuickAction::class);
         Livewire::component('d3vnz.issue-tracker.filament.resources.issue-resource.relation-managers.comments-relation-manager', CommentsRelationManager::class);
         Livewire::component('d3vnz-issue-tracker.filament.resources.issue-resource.pages.list-issues', \D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\ListIssues::class);
         Livewire::component('d3vnz-issue-tracker.filament.resources.issue-resource.pages.edit-issue', \D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\EditIssue::class);
@@ -70,18 +71,33 @@ class IssueTrackerServiceProvider extends ServiceProvider
                     'd3vnz-issue-report-bug' => MenuItem::make()
                         ->label('Report a Bug')
                         ->icon('heroicon-o-bug-ant')
-                        ->url(fn () => IssueResource::getUrl('index', ['create' => 'bug'])),
+                        ->url('#d3vnz-create-' . rawurlencode('bug')),
                     'd3vnz-issue-request-change' => MenuItem::make()
                         ->label('Request a Change')
                         ->icon('heroicon-o-pencil-square')
-                        ->url(fn () => IssueResource::getUrl('index', ['create' => 'enhancement'])),
+                        ->url('#d3vnz-create-' . rawurlencode('enhancement')),
                     'd3vnz-issue-request-feature' => MenuItem::make()
                         ->label('Request a Feature')
                         ->icon('heroicon-o-sparkles')
-                        ->url(fn () => IssueResource::getUrl('index', ['create' => 'feature request'])),
+                        ->url('#d3vnz-create-' . rawurlencode('feature request')),
                 ]);
             }
         });
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::BODY_END,
+            function (): string {
+                $user = auth()->user();
+                if (! $user || ! method_exists($user, 'isAdmin') || ! $user->isAdmin()) {
+                    return '';
+                }
+                try {
+                    return Blade::render('<livewire:d3vnz-issue-quick-action />');
+                } catch (\Exception $e) {
+                    return '';
+                }
+            }
+        );
 
         FilamentView::registerRenderHook(
             PanelsRenderHook::STYLES_AFTER,

@@ -33,14 +33,13 @@ class IssueResource extends Resource
 
     protected static ?string $slug = 'issues';
 
-
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationGroup = 'System';
 
-    public static function shouldRegisterNavigation(): bool
-    {
-        return false;
-    }
+    protected static ?string $navigationLabel = 'Issues';
+
+    protected static ?int $navigationSort = 90;
 
     public static function form(Form $form): Form
     {

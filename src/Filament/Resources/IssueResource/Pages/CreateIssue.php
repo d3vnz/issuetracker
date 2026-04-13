@@ -20,6 +20,15 @@ class CreateIssue extends CreateRecord
 {
     protected static string $resource = IssueResource::class;
 
+    protected function fillForm(): void
+    {
+        $data = [];
+        $type = request()->query('type');
+        if ($type) {
+            $data['labels']['name'] = $type;
+        }
+        $this->form->fill($data);
+    }
 
     public function handleRecordCreation(array $data): Model
     {

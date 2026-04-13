@@ -7,29 +7,22 @@
 namespace D3vnz\IssueTracker\Providers;
 
 
-use D3vnz\IssueTracker\Livewire\Global\IssueTab;
-use Filament\Support\Assets\Css;
-use Filament\Support\Facades\FilamentAsset;
-use Filament\Support\Facades\FilamentView;
-use Filament\View\PanelsRenderHook;
-use Illuminate\Support\Facades\Blade;
-use Illuminate\Support\Facades\View;
+use D3vnz\IssueTracker\Console\Commands\SyncIssuesWithGithub;
+use D3vnz\IssueTracker\Filament\Resources\IssueResource;
+use D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\CommentsRelationManager;
+use Filament\Facades\Filament;
+use Filament\Navigation\MenuItem;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
-use D3vnz\IssueTracker\Filament\Resources\IssueResource;
-use Filament\Facades\Filament;
-use D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\CommentsRelationManager;
-use D3vnz\IssueTracker\Console\Commands\SyncIssuesWithGithub;
+
 class IssueTrackerServiceProvider extends ServiceProvider
 {
-    /**
-     * Register services.
-     */
     public function register(): void
     {
         //
     }
-    protected function registerCommands()
+
+    protected function registerCommands(): void
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
@@ -37,54 +30,56 @@ class IssueTrackerServiceProvider extends ServiceProvider
             ]);
         }
     }
-    /**
-     * Bootstrap services.
-     */
+
     public function boot(): void
     {
-        if(config('app.env') === 'production' || env('ENABLE_ISSUE_TRACKER', true)) {
-
-            $this->loadMigrationsFrom(__DIR__ . '/../../database/migrations');
-            if ($this->app->runningInConsole()) {
-                $this->publishes([
-                    __DIR__ . '/../../database/migrations' => database_path('migrations'),
-                ], 'd3vnz-issuetracker-migrations');
-            }
-
-            Livewire::component('d3vnz-issue-tab', IssueTab::class);
-            Livewire::component('d3vnz.issue-tracker.filament.resources.issue-resource.relation-managers.comments-relation-manager', CommentsRelationManager::class);
-            Livewire::component('d3vnz-issue-tracker.filament.resources.issue-resource.pages.list-issues', \D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\ListIssues::class);
-            Livewire::component('d3vnz-issue-tracker.filament.resources.issue-resource.pages.edit-issue', \D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\EditIssue::class);
-            Livewire::component('d3vnz-issue-tracker.filament.resources.issue-resource.pages.create-issue', \D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\CreateIssue::class);
-            $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'd3vnz-issuetracker');
-
-            Filament::registerResources([
-                IssueResource::class,
-            ]);
-            // Register Livewire component
-            FilamentView::registerRenderHook(
-                PanelsRenderHook::USER_MENU_BEFORE,
-                function (): string {
-                    $currentUrl = request()->url();
-                    if (str_contains($currentUrl, 'login')) {
-                        return '';
-                    }
-
-                    try {
-                        return Blade::render('<livewire:d3vnz-issue-tab />');
-                    } catch (\Exception $e) {
-                        return '';
-                    }
-                }
-            );
-            $this->registerCommands();
+        if (config('app.env') !== 'production' && ! env('ENABLE_ISSUE_TRACKER', true)) {
+            return;
         }
 
+        $this->loadMigrationsFrom(__DIR__ . '/../../database/migrations');
 
-//        if ($this->app->runningInConsole()) {
-//            $this->publishes([
-//                __DIR__.'/../../resources/css' => public_path('css/vendor/d3vnz-issuetracker'),
-//            ], 'd3vnz-issuetracker-assets');
-//        }
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__ . '/../../database/migrations' => database_path('migrations'),
+            ], 'd3vnz-issuetracker-migrations');
+        }
+
+        Livewire::component('d3vnz.issue-tracker.filament.resources.issue-resource.relation-managers.comments-relation-manager', CommentsRelationManager::class);
+        Livewire::component('d3vnz-issue-tracker.filament.resources.issue-resource.pages.list-issues', \D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\ListIssues::class);
+        Livewire::component('d3vnz-issue-tracker.filament.resources.issue-resource.pages.edit-issue', \D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\EditIssue::class);
+        Livewire::component('d3vnz-issue-tracker.filament.resources.issue-resource.pages.create-issue', \D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\CreateIssue::class);
+
+        $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'd3vnz-issuetracker');
+
+        Filament::registerResources([
+            IssueResource::class,
+        ]);
+
+        Filament::serving(function (): void {
+            $user = auth()->user();
+            if (! $user || ! method_exists($user, 'isAdmin') || ! $user->isAdmin()) {
+                return;
+            }
+
+            foreach (Filament::getPanels() as $panel) {
+                $panel->userMenuItems([
+                    'd3vnz-issue-report-bug' => MenuItem::make()
+                        ->label('Report a Bug')
+                        ->icon('heroicon-o-bug-ant')
+                        ->url(fn () => IssueResource::getUrl('create', ['type' => 'bug'])),
+                    'd3vnz-issue-request-change' => MenuItem::make()
+                        ->label('Request a Change')
+                        ->icon('heroicon-o-pencil-square')
+                        ->url(fn () => IssueResource::getUrl('create', ['type' => 'enhancement'])),
+                    'd3vnz-issue-request-feature' => MenuItem::make()
+                        ->label('Request a Feature')
+                        ->icon('heroicon-o-sparkles')
+                        ->url(fn () => IssueResource::getUrl('create', ['type' => 'feature request'])),
+                ]);
+            }
+        });
+
+        $this->registerCommands();
     }
 }

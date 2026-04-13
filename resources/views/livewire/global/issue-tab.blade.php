@@ -1,122 +1,60 @@
 <div>
     @if(auth()->check() && auth()->user()->isAdmin())
-    <div x-data="{ isOpen: false }" class="issue-engage" id="kt_app_engage">
-        <div class="issue-engage-content">
-            <div x-show="isOpen" x-transition:enter="transition ease-out duration-300"
-                 x-transition:enter-start="opacity-0 transform translate-y-full"
-                 x-transition:enter-end="opacity-100 transform translate-y-0"
-                 x-transition:leave="transition ease-in duration-300"
-                 x-transition:leave-start="opacity-100 transform translate-y-0"
-                 x-transition:leave-end="opacity-0 transform translate-y-full">
-                <a href="{{ \D3vnz\IssueTracker\Filament\Resources\IssueResource::getUrl('index') }}"
-                   class="issue-engage-btn hover-dark">
-                    <i class="las la-info-circle fs-1 pt-1 mb-2"></i>
-                    Issues
-                </a>
+        <div class="fi-dropdown-list p-1 issue-tracker-menu-group">
+            <div class="issue-tracker-menu-label">Issue Tracker</div>
 
-                <a href="" class="issue-engage-btn hover-primary"
-                   wire:click.prevent="mountAction('createQuickIssue',{'type' : 'bug'})">
-                    <i class="las la-bug fs-1 pt-1 mb-2"></i>
-                    Bug
-                </a>
-                <a wire:click.prevent="mountAction('createQuickIssue',{'type' : 'enhancement'})"
-                   class="issue-engage-btn hover-primary">
-                    <i class="las la-pen fs-1 pt-1 mb-2"></i>
-                    Change
-                </a>
+            <a href="{{ \D3vnz\IssueTracker\Filament\Resources\IssueResource::getUrl('index') }}"
+               class="fi-dropdown-list-item flex w-full items-center gap-2 whitespace-nowrap rounded-md p-2 text-sm outline-none transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">
+                <x-filament::icon icon="heroicon-m-rectangle-stack" class="h-5 w-5 text-gray-400 dark:text-gray-500"/>
+                <span class="text-gray-700 dark:text-gray-200">View Issues</span>
+            </a>
 
-                <a wire:click.prevent="mountAction('createQuickIssue',{'type' : 'feature request'})"
-                   class="issue-engage-btn hover-success">
-                    <i class="las la-grin-stars fs-1 pt-1 mb-2"></i>
-                    Feature
-                </a>
-            </div>
+            <button type="button"
+                    wire:click.prevent="mountAction('createQuickIssue',{'type' : 'bug'})"
+                    class="fi-dropdown-list-item flex w-full items-center gap-2 whitespace-nowrap rounded-md p-2 text-sm outline-none transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">
+                <x-filament::icon icon="heroicon-m-bug-ant" class="h-5 w-5 text-danger-500"/>
+                <span class="text-gray-700 dark:text-gray-200">Report a Bug</span>
+            </button>
+
+            <button type="button"
+                    wire:click.prevent="mountAction('createQuickIssue',{'type' : 'enhancement'})"
+                    class="fi-dropdown-list-item flex w-full items-center gap-2 whitespace-nowrap rounded-md p-2 text-sm outline-none transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">
+                <x-filament::icon icon="heroicon-m-pencil-square" class="h-5 w-5 text-warning-500"/>
+                <span class="text-gray-700 dark:text-gray-200">Request a Change</span>
+            </button>
+
+            <button type="button"
+                    wire:click.prevent="mountAction('createQuickIssue',{'type' : 'feature request'})"
+                    class="fi-dropdown-list-item flex w-full items-center gap-2 whitespace-nowrap rounded-md p-2 text-sm outline-none transition duration-75 hover:bg-gray-50 dark:hover:bg-white/5">
+                <x-filament::icon icon="heroicon-m-sparkles" class="h-5 w-5 text-success-500"/>
+                <span class="text-gray-700 dark:text-gray-200">Request a Feature</span>
+            </button>
+
+            <div class="issue-tracker-menu-divider"></div>
         </div>
 
-        <a href="#" @click.prevent="isOpen = !isOpen" class="issue-engage-btn-toggle text-hover-primary p-0">
-            <i x-bind:class="isOpen ? 'las la-times' : 'las la-question-circle'" class="fs-2x"></i>
-        </a>
-    </div>
+        <x-filament-actions::modals/>
 
-    <x-filament-actions::modals/>
-    <link rel="stylesheet"
-          href="https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css">
-    @once
-        <style>
-            .issue-engage {
-                position: fixed;
-                right: 12px;
-                bottom: 50px;
-                display: flex;
-                flex-direction: column;
-                align-items: flex-end;
-                z-index: 5;
-            }
-
-            .issue-engage-content {
-                position: absolute;
-                bottom: 100%;
-                right: 0;
-                margin-bottom: 8px;
-            }
-
-            .issue-engage .issue-engage-btn {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                flex-direction: column;
-                box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.15);
-                border: 1px solid #E4E6EF;
-                font-size: 12px;
-                font-weight: 600;
-                margin-bottom: 8px;
-                border-radius: 6px;
-                width: 66px;
-                height: 70px;
-                color: #5E6278;
-                background-color: #ffffff;
-                transition: all 0.3s ease;
-            }
-
-            .issue-engage .issue-engage-btn:hover {
-                background-color: #F5F8FA;
-                font-weight: bold;
-                cursor:pointer;
-            }
-
-            .issue-engage .issue-engage-btn-toggle {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 35px;
-                height: 35px;
-                border-radius: 6px;
-                background-color: #ffffff;
-                box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.15);
-                transition: all 0.3s ease;
-                border: 1px solid #E4E6EF;
-            }
-
-            .issue-engage .issue-engage-btn-toggle:hover {
-                background-color: #F5F8FA;
-            }
-
-            .issue-engage .issue-engage-btn i,
-            .issue-engage .issue-engage-btn-toggle i {
-                font-size: 1.5rem;
-            }
-            .dark .issue-engage .issue-engage-btn,
-            .dark .issue-engage .issue-engage-btn-toggle {
-                background-color: var(--gray-800);
-                border-color: var(--gray-700);
-                color: var(--gray-300);
-            }
-
-            .dark .issue-engage .issue-engage-btn:hover,
-            .dark .issue-engage .issue-engage-btn-toggle:hover {
-                background-color: var(--gray-700);
-            }
-        </style>
-    @endonce
-        @endif
+        @once
+            <style>
+                .issue-tracker-menu-group { display: flex; flex-direction: column; gap: 2px; }
+                .issue-tracker-menu-label {
+                    padding: 6px 8px 4px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    text-transform: uppercase;
+                    letter-spacing: 0.04em;
+                    color: rgb(107 114 128);
+                }
+                .dark .issue-tracker-menu-label { color: rgb(156 163 175); }
+                .issue-tracker-menu-divider {
+                    height: 1px;
+                    background-color: rgb(229 231 235);
+                    margin: 4px 0;
+                }
+                .dark .issue-tracker-menu-divider { background-color: rgb(255 255 255 / 0.05); }
+                .issue-tracker-menu-group button { cursor: pointer; background: transparent; border: 0; text-align: left; }
+            </style>
+        @endonce
+    @endif
 </div>

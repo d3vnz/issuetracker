@@ -9,6 +9,7 @@ namespace D3vnz\IssueTracker\Filament\Resources;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\CommentsRelationManager;
 use D3vnz\IssueTracker\Mail\Issue\Comment;
+use D3vnz\IssueTracker\Mail\Issue\StatusUpdate;
 use D3vnz\IssueTracker\Models\Issue;
 use Filament\Forms\Form;
 use D3vnz\IssueTracker\Mail\Issue\Closure;
@@ -100,12 +101,16 @@ class IssueResource extends Resource
                     }),
                 TextColumn::make('state')
                     ->label('Status')
+                    ->formatStateUsing(fn($state) => ucfirst((string) $state))
                     ->color(function($state){
-                        if($state == 'open'){
-                            return 'gray';
-                        }else{
-                            return 'success';
-                        }
+                        return match($state){
+                            'open' => 'gray',
+                            'investigating' => 'info',
+                            'implementing' => 'warning',
+                            'pending' => 'primary',
+                            'closed' => 'success',
+                            default => 'gray',
+                        };
                     })
                     ->badge(),
                 TextColumn::make('updated_at')
@@ -122,6 +127,30 @@ class IssueResource extends Resource
             ])
             ->actions([
                 ActionGroup::make([
+                    ...collect([
+                        'investigating' => ['label' => 'Mark Investigating', 'color' => 'info', 'icon' => 'heroicon-o-magnifying-glass'],
+                        'implementing'  => ['label' => 'Mark Implementing',  'color' => 'warning', 'icon' => 'heroicon-o-wrench-screwdriver'],
+                        'pending'       => ['label' => 'Mark Pending',       'color' => 'primary', 'icon' => 'heroicon-o-clock'],
+                    ])->map(function($meta, $status){
+                        return Action::make($meta['label'])
+                            ->label($meta['label'])
+                            ->icon($meta['icon'])
+                            ->color($meta['color'])
+                            ->visible(fn(?Model $record) => $record && $record->state !== $status && $record->state !== 'closed')
+                            ->form([
+                                Forms\Components\RichEditor::make('note')
+                                    ->label('Optional note to include in the notification email')
+                                    ->columnSpanFull(),
+                            ])
+                            ->action(function(array $data, ?Model $record) use ($status){
+                                $record->update(['state' => $status]);
+
+                                $user = \App\Models\User::find($record->user_id);
+                                if ($user) {
+                                    Mail::to($user)->send(new StatusUpdate($user, $record, $status, $data['note'] ?? null));
+                                }
+                            });
+                    })->values()->all(),
                     Action::make('Close Issue')
                         ->visible(function(?Model $record){
                             return $record->state != 'closed';
@@ -186,16 +215,21 @@ class IssueResource extends Resource
 
             ->defaultPaginationPageOption(25)
             ->filters([
-                \Filament\Tables\Filters\TernaryFilter::make('state')
-                    ->placeholder('Request Status')
-                    ->trueLabel('Open')
-                    ->falseLabel('Closed')
-                    ->queries(
-                        true: fn (Builder $query) => $query->where('state','open'),
-                        false: fn (Builder $query) => $query->where('state','closed'),
-                        blank: fn (Builder $query) => $query, // In this example, we do not want to filter the query when it is blank.
-                    )
-                    ->default(true),
+                \Filament\Tables\Filters\SelectFilter::make('state')
+                    ->label('Status')
+                    ->options([
+                        'open' => 'Open',
+                        'investigating' => 'Investigating',
+                        'implementing' => 'Implementing',
+                        'pending' => 'Pending',
+                        'closed' => 'Closed',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        if (empty($data['value'])) {
+                            return $query->where('state', '!=', 'closed');
+                        }
+                        return $query->where('state', $data['value']);
+                    }),
                 \Filament\Tables\Filters\SelectFilter::make('label')
                     ->options(function(){
                         $issue = new Issue();

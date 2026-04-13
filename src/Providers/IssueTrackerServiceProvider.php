@@ -63,21 +63,18 @@ class IssueTrackerServiceProvider extends ServiceProvider
             ]);
             // Register Livewire component
             FilamentView::registerRenderHook(
-                PanelsRenderHook::BODY_END,
+                PanelsRenderHook::USER_MENU_BEFORE,
                 function (): string {
                     $currentUrl = request()->url();
-                    if (str_contains($currentUrl, 'login'))
+                    if (str_contains($currentUrl, 'login')) {
                         return '';
+                    }
 
-                    // Check if the current route is not in the excluded list
                     try {
                         return Blade::render('<livewire:d3vnz-issue-tab />');
                     } catch (\Exception $e) {
-                        // Log the error or handle it as needed
-
-                        return ''; // Return an empty string in case of an error
+                        return '';
                     }
-                    // return View::make('d3vnz-issuetracker::livewire.global.issue-tab')->render();
                 }
             );
             $this->registerCommands();

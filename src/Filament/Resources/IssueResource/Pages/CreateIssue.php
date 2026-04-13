@@ -60,7 +60,9 @@ class CreateIssue extends CreateRecord
             })
         ]);
 
-        Mail::to(auth()->user())->send(new Confirmation(auth()->user(), $record));
+        if (! config('issuetracker.ai.enabled')) {
+            Mail::to(auth()->user())->send(new Confirmation(auth()->user(), $record));
+        }
         Mail::to('joel@d3v.nz')->send(new MailNotification(auth()->user(), $record, $res));
 
 

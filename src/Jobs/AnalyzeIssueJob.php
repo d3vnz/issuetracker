@@ -5,6 +5,7 @@
 
 namespace D3vnz\IssueTracker\Jobs;
 
+use D3vnz\IssueTracker\Mail\Issue\Confirmation;
 use D3vnz\IssueTracker\Mail\Issue\RequestMoreInfo;
 use D3vnz\IssueTracker\Models\Issue;
 use Illuminate\Bus\Queueable;
@@ -30,16 +31,18 @@ class AnalyzeIssueJob implements ShouldQueue
 
     public function handle(): void
     {
-        if (! config('issuetracker.ai.enabled')) {
-            return;
-        }
-
-        if (! env('OPENAI_API_KEY')) {
-            return;
-        }
-
         $issue = $this->issue->fresh();
-        if (! $issue || $issue->state === 'closed') {
+        if (! $issue) {
+            return;
+        }
+
+        $creator = $issue->author;
+        if (! $creator || ! $creator->email) {
+            return;
+        }
+
+        if (! config('issuetracker.ai.enabled') || ! env('OPENAI_API_KEY')) {
+            Mail::to($creator)->send(new Confirmation($creator, $issue));
             return;
         }
 
@@ -54,30 +57,23 @@ class AnalyzeIssueJob implements ShouldQueue
             ->get(['id', 'number', 'title', 'body']);
 
         $verdict = $this->analyze($issue, $plainBody, $imageUrls, $candidates);
-        if (! $verdict) {
-            return;
-        }
 
         $needsMore = (bool) ($verdict['needs_more_info'] ?? false);
         $duplicateOf = $verdict['duplicate_of'] ?? null;
         $reason = trim((string) ($verdict['reason'] ?? ''));
 
-        if (! $needsMore && ! $duplicateOf) {
+        if ($verdict && ($needsMore || $duplicateOf)) {
+            $duplicate = null;
+            if ($duplicateOf) {
+                $duplicate = $candidates->firstWhere('number', (int) $duplicateOf)
+                    ?? $candidates->firstWhere('id', (int) $duplicateOf);
+            }
+
+            Mail::to($creator)->send(new RequestMoreInfo($creator, $issue, $reason, $duplicate));
             return;
         }
 
-        $creator = $issue->author;
-        if (! $creator || ! $creator->email) {
-            return;
-        }
-
-        $duplicate = null;
-        if ($duplicateOf) {
-            $duplicate = $candidates->firstWhere('number', (int) $duplicateOf)
-                ?? $candidates->firstWhere('id', (int) $duplicateOf);
-        }
-
-        Mail::to($creator)->send(new RequestMoreInfo($creator, $issue, $reason, $duplicate));
+        Mail::to($creator)->send(new Confirmation($creator, $issue));
     }
 
     protected function extractImageUrls(string $html): array

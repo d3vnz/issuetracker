@@ -12,6 +12,9 @@ use D3vnz\IssueTracker\Filament\Resources\IssueResource;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\CommentsRelationManager;
 use Filament\Facades\Filament;
 use Filament\Navigation\MenuItem;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 
@@ -67,18 +70,30 @@ class IssueTrackerServiceProvider extends ServiceProvider
                     'd3vnz-issue-report-bug' => MenuItem::make()
                         ->label('Report a Bug')
                         ->icon('heroicon-o-bug-ant')
-                        ->url(fn () => IssueResource::getUrl('create', ['type' => 'bug'])),
+                        ->url(fn () => IssueResource::getUrl('index', ['create' => 'bug'])),
                     'd3vnz-issue-request-change' => MenuItem::make()
                         ->label('Request a Change')
                         ->icon('heroicon-o-pencil-square')
-                        ->url(fn () => IssueResource::getUrl('create', ['type' => 'enhancement'])),
+                        ->url(fn () => IssueResource::getUrl('index', ['create' => 'enhancement'])),
                     'd3vnz-issue-request-feature' => MenuItem::make()
                         ->label('Request a Feature')
                         ->icon('heroicon-o-sparkles')
-                        ->url(fn () => IssueResource::getUrl('create', ['type' => 'feature request'])),
+                        ->url(fn () => IssueResource::getUrl('index', ['create' => 'feature request'])),
                 ]);
             }
         });
+
+        FilamentView::registerRenderHook(
+            PanelsRenderHook::STYLES_AFTER,
+            fn (): string => Blade::render(<<<'BLADE'
+<style>
+    .fi-sidebar-item a[href*="/issues"] .fi-sidebar-item-icon,
+    .fi-sidebar-item a[href*="/issues"] svg {
+        color: #dc2626 !important;
+    }
+</style>
+BLADE)
+        );
 
         $this->registerCommands();
     }

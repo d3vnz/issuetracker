@@ -33,11 +33,11 @@ class IssueResource extends Resource
 
     protected static ?string $slug = 'issues';
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-bug-ant';
 
     protected static ?string $navigationGroup = 'System';
 
-    protected static ?string $navigationLabel = 'Issues';
+    protected static ?string $navigationLabel = 'Application Issues';
 
     protected static ?int $navigationSort = 90;
 
@@ -67,13 +67,11 @@ class IssueResource extends Resource
                 TextColumn::make('title')
                     ->searchable()
                     ->label('Issue Title'),
-                TextColumn::make('labels')
+                TextColumn::make('labels.name')
                     ->alignCenter()
                     ->placeholder('None')
-                    ->formatStateUsing(function (?Model $record): \Illuminate\Support\HtmlString|null {
-                        return isset($record->labels['name']) ? new \Illuminate\Support\HtmlString('<span style="color:#'.$record->labels['color'].'">'.$record->labels['name'].'</span>') : null;
-                    })
-
+                    ->state(fn (?Model $record) => $record?->labels['name'] ?? null)
+                    ->formatStateUsing(fn ($state) => $state ? ucfirst((string) $state) : null)
                     ->badge()
                     ->color(function(?Model $record){
                         if(isset($record->labels['name'])){
@@ -126,31 +124,59 @@ class IssueResource extends Resource
             ])
             ->actions([
                 ActionGroup::make([
-                    ...collect([
-                        'investigating' => ['label' => 'Mark Investigating', 'color' => 'info', 'icon' => 'heroicon-o-magnifying-glass'],
-                        'implementing'  => ['label' => 'Mark Implementing',  'color' => 'warning', 'icon' => 'heroicon-o-wrench-screwdriver'],
-                        'pending'       => ['label' => 'Mark Pending',       'color' => 'primary', 'icon' => 'heroicon-o-clock'],
-                    ])->map(function($meta, $status){
-                        return Action::make($meta['label'])
-                            ->label($meta['label'])
-                            ->icon($meta['icon'])
-                            ->color($meta['color'])
-                            ->visible(fn(?Model $record) => $record && $record->state !== $status && $record->state !== 'closed')
-                            ->form([
-                                Forms\Components\RichEditor::make('note')
-                                    ->label('Optional note to include in the notification email')
-                                    ->columnSpanFull(),
-                            ])
-                            ->action(function(array $data, ?Model $record) use ($status){
-                                $record->update(['state' => $status]);
-
-                                $user = \App\Models\User::find($record->user_id);
-                                if ($user) {
-                                    Mail::to($user)->send(new StatusUpdate($user, $record, $status, $data['note'] ?? null));
-                                }
-                            });
-                    })->values()->all(),
-                    Action::make('Close Issue')
+                    Action::make('markInvestigating')
+                        ->label('Mark Investigating')
+                        ->icon('heroicon-o-magnifying-glass')
+                        ->color('info')
+                        ->visible(fn(?Model $record) => $record && ! in_array($record->state, ['investigating', 'closed']))
+                        ->form([
+                            Forms\Components\RichEditor::make('note')
+                                ->label('Optional note to include in the notification email')
+                                ->columnSpanFull(),
+                        ])
+                        ->action(function (array $data, ?Model $record) {
+                            $record->update(['state' => 'investigating']);
+                            $user = \App\Models\User::find($record->user_id);
+                            if ($user) {
+                                Mail::to($user)->send(new StatusUpdate($user, $record, 'investigating', $data['note'] ?? null));
+                            }
+                        }),
+                    Action::make('markImplementing')
+                        ->label('Mark Implementing')
+                        ->icon('heroicon-o-wrench-screwdriver')
+                        ->color('warning')
+                        ->visible(fn(?Model $record) => $record && ! in_array($record->state, ['implementing', 'closed']))
+                        ->form([
+                            Forms\Components\RichEditor::make('note')
+                                ->label('Optional note to include in the notification email')
+                                ->columnSpanFull(),
+                        ])
+                        ->action(function (array $data, ?Model $record) {
+                            $record->update(['state' => 'implementing']);
+                            $user = \App\Models\User::find($record->user_id);
+                            if ($user) {
+                                Mail::to($user)->send(new StatusUpdate($user, $record, 'implementing', $data['note'] ?? null));
+                            }
+                        }),
+                    Action::make('markPending')
+                        ->label('Mark Pending')
+                        ->icon('heroicon-o-clock')
+                        ->color('primary')
+                        ->visible(fn(?Model $record) => $record && ! in_array($record->state, ['pending', 'closed']))
+                        ->form([
+                            Forms\Components\RichEditor::make('note')
+                                ->label('Optional note to include in the notification email')
+                                ->columnSpanFull(),
+                        ])
+                        ->action(function (array $data, ?Model $record) {
+                            $record->update(['state' => 'pending']);
+                            $user = \App\Models\User::find($record->user_id);
+                            if ($user) {
+                                Mail::to($user)->send(new StatusUpdate($user, $record, 'pending', $data['note'] ?? null));
+                            }
+                        }),
+                    Action::make('closeIssue')
+                        ->label('Close Issue')
                         ->visible(function(?Model $record){
                             return $record->state != 'closed';
                         })
@@ -234,7 +260,6 @@ class IssueResource extends Resource
                         $issue = new Issue();
                         return collect($issue->getLabels())->pluck('name', 'name');
                     })
-                    ->default('bug')
                     ->query(function (Builder $query, array $data): Builder {
                         if (empty($data['value'])) {
                             return $query;

@@ -27,7 +27,12 @@ class ListIssues extends ListRecords
 
         $type = request()->query('create');
         if ($type) {
-            $this->mountAction('createIssue', ['type' => $type]);
+            $this->js(
+                '$wire.mountAction(' .
+                json_encode('createIssue') . ', ' .
+                json_encode(['type' => $type]) .
+                ')'
+            );
         }
     }
 

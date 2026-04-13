@@ -22,7 +22,11 @@ class IssueTrackerServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        if (! class_exists(\Filament\Forms\Form::class, false)
+            && ! interface_exists(\Filament\Forms\Form::class, false)
+            && class_exists(\Filament\Schemas\Schema::class)) {
+            class_alias(\Filament\Schemas\Schema::class, \Filament\Forms\Form::class);
+        }
     }
 
     protected function registerCommands(): void

@@ -46,7 +46,9 @@ class Issue extends Model
         return [
             Grid::make(12)->schema([
                 TextInput::make('title')
-                    ->columnSpan(6)
+                    ->columnSpan(function(?Model $record){
+                        return isset($record->id) ? 6 : 9;
+                    })
                     ->label('Issue / Request Title')
                     ->required(),
                 Select::make('labels.name')

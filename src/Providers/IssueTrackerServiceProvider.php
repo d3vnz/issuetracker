@@ -39,7 +39,7 @@ class IssueTrackerServiceProvider extends ServiceProvider
         ];
 
         foreach ($aliases as $legacy => $modern) {
-            if (class_exists($legacy, false) || interface_exists($legacy, false)) {
+            if (class_exists($legacy) || interface_exists($legacy)) {
                 continue;
             }
             if (! class_exists($modern)) {

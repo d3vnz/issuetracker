@@ -6,10 +6,16 @@ Dear {{ $user->first_name ?? $user->name }},
 Thanks for logging **{{ $issue->title }}**. Before our development team can action it, we'd appreciate some extra context.
 
 @if(!empty($reason))
-{{ $reason }}
-@else
-Could you please reply with any steps to reproduce, what you expected to happen, and a screenshot or screen recording if possible?
+**Review notes from our triage assistant:**
+
+> {{ $reason }}
 @endif
+
+Could you please reply with:
+
+- Steps to reproduce the issue (what you clicked, what you typed)
+- What you expected to happen versus what actually happened
+- A screenshot or short screen recording if possible
 
 @if($duplicate)
 ---

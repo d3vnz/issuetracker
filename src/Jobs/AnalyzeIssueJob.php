@@ -110,8 +110,12 @@ class AnalyzeIssueJob implements ShouldQueue
             . 'Decide if a newly-created issue needs more information from the reporter, '
             . 'and whether it likely duplicates an existing open issue. '
             . 'If an image is provided, use its contents to judge whether the description is sufficient. '
+            . 'The "reason" field MUST be written as a direct message to the reporter explaining '
+            . 'what is unclear and what would help (e.g. "I need more information to understand '
+            . 'what action triggered this — could you describe the steps you took before the error?"). '
+            . 'Do not refer to yourself in the third person and do not mention JSON. '
             . 'Respond ONLY as compact JSON: '
-            . '{"needs_more_info":bool,"duplicate_of":null|number,"reason":"short human-readable sentence"}';
+            . '{"needs_more_info":bool,"duplicate_of":null|number,"reason":"direct message to the reporter"}';
 
         $userText = "NEW ISSUE\nTitle: {$issue->title}\nBody: {$plainBody}\n\n"
             . "OPEN ISSUES (number | title | snippet):\n" . ($candidateList ?: '(none)');

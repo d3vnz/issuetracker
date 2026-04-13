@@ -7,7 +7,18 @@
       "Bash(git push:*)",
       "Bash(git restore:*)",
       "Bash(curl -s \"https://context7.com/api/v1/search?query=filament+mountAction+url\")",
-      "WebFetch(domain:filamentphp.com)"
+      "WebFetch(domain:filamentphp.com)",
+      "Bash(grep:*)",
+      "Bash(php -l src/Jobs/AnalyzeIssueJob.php)",
+      "Bash(php -l src/Mail/Issue/RequestMoreInfo.php)",
+      "Bash(php -l src/Providers/IssueTrackerServiceProvider.php)",
+      "Bash(php -l config/issuetracker.php)",
+      "Bash(php -l src/Mail/Issue/Confirmation.php)",
+      "Bash(php -l src/Mail/Issue/Notification.php)",
+      "Bash(php -l src/Mail/Issue/StatusUpdate.php)",
+      "Bash(php -l src/Mail/Issue/Closure.php)",
+      "WebSearch",
+      "WebFetch(domain:github.com)"
     ]
   }
 }

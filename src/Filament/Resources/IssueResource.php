@@ -33,13 +33,19 @@ class IssueResource extends Resource
 
     protected static ?string $slug = 'issues';
 
-    protected static ?string $navigationIcon = 'heroicon-o-bug-ant';
-
-    protected static ?string $navigationGroup = 'System';
-
     protected static ?string $navigationLabel = 'Application Issues';
 
     protected static ?int $navigationSort = 90;
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'System';
+    }
+
+    public static function getNavigationIcon(): string|\Illuminate\Contracts\Support\Htmlable|null
+    {
+        return 'heroicon-o-bug-ant';
+    }
 
     public static function form(Form $form): Form
     {
@@ -177,6 +183,7 @@ class IssueResource extends Resource
                         }),
                     Action::make('closeIssue')
                         ->label('Close Issue')
+                        ->icon('heroicon-o-x-circle')
                         ->visible(function(?Model $record){
                             return $record->state != 'closed';
                         })

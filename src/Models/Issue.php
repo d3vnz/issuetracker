@@ -8,7 +8,6 @@ namespace D3vnz\IssueTracker\Models;
 
 use D3vnz\IssueTracker\Traits\GithubTrait;
 use Filament\Forms\Components\Grid;
-use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -64,10 +63,13 @@ class Issue extends Model
                         return collect($issue->getLabels())->pluck('name', 'name');
 
                     }),
-                Placeholder::make('created_at')->label('Issue Created')
+                TextInput::make('created_at_display')
+                    ->label('Issue Created')
                     ->columnSpan(3)
+                    ->disabled()
+                    ->dehydrated(false)
                     ->visible(fn(?Model $record) => isset($record->created_at))
-                    ->content(fn(?Model $record): string => isset($record->created_at) ? $record->created_at->format('D dS M Y H:i') : null),
+                    ->formatStateUsing(fn(?Model $record) => $record?->created_at?->format('D dS M Y H:i')),
             ]),
             RichEditor::make('body')
                 ->label('Issue / Request Description')

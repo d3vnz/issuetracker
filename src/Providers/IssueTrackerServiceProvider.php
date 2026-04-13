@@ -26,10 +26,26 @@ class IssueTrackerServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../../config/issuetracker.php', 'issuetracker');
 
-        if (! class_exists(\Filament\Forms\Form::class, false)
-            && ! interface_exists(\Filament\Forms\Form::class, false)
-            && class_exists(\Filament\Schemas\Schema::class)) {
-            class_alias(\Filament\Schemas\Schema::class, \Filament\Forms\Form::class);
+        $this->aliasFilamentV5Classes();
+    }
+
+    protected function aliasFilamentV5Classes(): void
+    {
+        $aliases = [
+            \Filament\Forms\Form::class => \Filament\Schemas\Schema::class,
+            \Filament\Forms\Components\Grid::class => \Filament\Schemas\Components\Grid::class,
+            \Filament\Tables\Actions\ActionGroup::class => \Filament\Actions\ActionGroup::class,
+            \Filament\Tables\Actions\Action::class => \Filament\Actions\Action::class,
+        ];
+
+        foreach ($aliases as $legacy => $modern) {
+            if (class_exists($legacy, false) || interface_exists($legacy, false)) {
+                continue;
+            }
+            if (! class_exists($modern)) {
+                continue;
+            }
+            class_alias($modern, $legacy);
         }
     }
 

@@ -17,6 +17,8 @@ class Confirmation extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
+    public bool $afterCommit = true;
+
     public $user;
     public $issue;
 

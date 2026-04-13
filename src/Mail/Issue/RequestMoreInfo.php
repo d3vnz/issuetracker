@@ -16,6 +16,8 @@ class RequestMoreInfo extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
+    public bool $afterCommit = true;
+
     public function __construct(
         public $user,
         public $issue,

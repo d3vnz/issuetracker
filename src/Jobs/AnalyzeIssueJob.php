@@ -21,6 +21,7 @@ class AnalyzeIssueJob implements ShouldQueue
 
     public int $tries = 2;
     public int $timeout = 120;
+    public bool $afterCommit = true;
 
     public function __construct(public Issue $issue)
     {

@@ -76,6 +76,9 @@ class Issue extends Model
             RichEditor::make('body')
                 ->label('Issue / Request Description')
                 ->required()
+                ->extraInputAttributes([
+                    'style' => 'height: 200px;'
+                ])
                 ->columnSpanFull()
         ];
     }

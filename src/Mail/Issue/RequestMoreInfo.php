@@ -16,14 +16,13 @@ class RequestMoreInfo extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public $afterCommit = true;
-
     public function __construct(
         public $user,
         public $issue,
         public ?string $reason = null,
         public $duplicate = null,
     ) {
+        $this->afterCommit = true;
     }
 
     public function envelope(): Envelope

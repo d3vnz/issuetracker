@@ -17,8 +17,6 @@ class StatusUpdate extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public $afterCommit = true;
-
     public $user;
     public $issue;
     public $status;
@@ -30,6 +28,7 @@ class StatusUpdate extends Mailable implements ShouldQueue
         $this->issue = $issue;
         $this->status = $status;
         $this->note = $note;
+        $this->afterCommit = true;
     }
 
     public function envelope(): Envelope

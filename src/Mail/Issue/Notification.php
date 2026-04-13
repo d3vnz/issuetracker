@@ -17,8 +17,6 @@ class Notification extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public $afterCommit = true;
-
     public $user;
     public $issue;
     private $result;
@@ -30,12 +28,11 @@ class Notification extends Mailable implements ShouldQueue
      */
     public function __construct($user, $issue, $result)
     {
-        //
         $this->user = $user;
         $this->issue = $issue;
         $this->comment = $issue;
         $this->url = $result['html_url'];
-
+        $this->afterCommit = true;
     }
 
     /**

@@ -21,10 +21,10 @@ class AnalyzeIssueJob implements ShouldQueue
 
     public int $tries = 2;
     public int $timeout = 120;
-    public $afterCommit = true;
 
     public function __construct(public Issue $issue)
     {
+        $this->afterCommit = true;
         $this->onQueue(config('issuetracker.ai.queue', 'default'));
     }
 

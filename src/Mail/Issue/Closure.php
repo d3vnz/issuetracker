@@ -17,8 +17,6 @@ class Closure extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
-    public $afterCommit = true;
-
     public $user;
     public $issue;
 
@@ -27,9 +25,9 @@ class Closure extends Mailable implements ShouldQueue
      */
     public function __construct($user, $issue)
     {
-        //
         $this->user = $user;
         $this->issue = $issue;
+        $this->afterCommit = true;
     }
 
     /**

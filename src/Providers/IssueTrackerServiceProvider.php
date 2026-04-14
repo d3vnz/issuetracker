@@ -90,9 +90,7 @@ class IssueTrackerServiceProvider extends ServiceProvider
 
         $this->loadViewsFrom(__DIR__ . '/../../resources/views', 'd3vnz-issuetracker');
 
-        Filament::registerResources([
-            IssueResource::class,
-        ]);
+
 
         Filament::serving(function (): void {
             $user = auth()->user();
@@ -100,6 +98,9 @@ class IssueTrackerServiceProvider extends ServiceProvider
                 return;
             }
 
+            Filament::registerResources([
+                IssueResource::class,
+            ]);
             foreach (Filament::getPanels() as $panel) {
                 $panel->userMenuItems([
                     'd3vnz-issue-report-bug' => MenuItem::make()

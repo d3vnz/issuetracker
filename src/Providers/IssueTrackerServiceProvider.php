@@ -101,6 +101,7 @@ class IssueTrackerServiceProvider extends ServiceProvider
             Filament::registerResources([
                 IssueResource::class,
             ]);
+
             foreach (Filament::getPanels() as $panel) {
                 $panel->userMenuItems([
                     'd3vnz-issue-report-bug' => MenuItem::make()

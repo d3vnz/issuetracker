@@ -42,6 +42,17 @@ class IssueResource extends Resource
         return 'System';
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = auth()->user();
+        return $user && method_exists($user, 'isAdmin') && $user->isAdmin();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::shouldRegisterNavigation();
+    }
+
     public static function getNavigationIcon(): string|\Illuminate\Contracts\Support\Htmlable|null
     {
         return 'heroicon-o-bug-ant';

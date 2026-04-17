@@ -88,20 +88,9 @@ class IssueResource extends Resource
                     ->alignCenter()
                     ->placeholder('None')
                     ->state(fn (?Model $record) => $record?->labels['name'] ?? null)
-                    ->formatStateUsing(fn ($state) => $state ? ucfirst((string) $state) : null)
+                    ->formatStateUsing(fn ($state) => Issue::displayLabel($state))
                     ->badge()
-                    ->color(function(?Model $record){
-                        if(isset($record->labels['name'])){
-                            if($record->labels['name'] == 'bug'){
-                                return 'danger';
-                            }elseif($record->labels['name'] == 'feature'){
-                                return 'success';
-                            }elseif($record->labels['name'] == 'change'){
-                                return 'warning';
-                                }
-                        }
-                        return 'primary';
-                    })
+                    ->color(fn ($state) => Issue::labelColor($state))
                     ->label('Request Type'),
                 TextColumn::make('author.name')
                     ->label('Logged By'),
@@ -122,20 +111,11 @@ class IssueResource extends Resource
                         if ($record->state === 'closed') {
                             return 'closed';
                         }
-                        return $record->status ?: $record->state;
+                        $status = $record->status ?: $record->state;
+                        return $status ? (config('issuetracker.statuses.prefix', 'status:') . $status) : null;
                     })
-                    ->formatStateUsing(fn($state) => ucfirst((string) $state))
-                    ->color(function($state){
-                        return match($state){
-                            'open', 'received' => 'gray',
-                            'investigating' => 'info',
-                            'implementing' => 'warning',
-                            'pending' => 'primary',
-                            'deployed' => 'success',
-                            'closed' => 'success',
-                            default => 'gray',
-                        };
-                    })
+                    ->formatStateUsing(fn ($state) => Issue::displayLabel($state))
+                    ->color(fn ($state) => $state === 'closed' ? 'success' : Issue::labelColor($state))
                     ->badge(),
                 TextColumn::make('updated_at')
                     ->label('Age')

@@ -58,6 +58,42 @@ class Issue extends Model
         return null;
     }
 
+    public static function displayLabel(?string $name): ?string
+    {
+        if ($name === null || $name === '') {
+            return null;
+        }
+        $prefix = (string) config('issuetracker.statuses.prefix', 'status:');
+        if (str_starts_with($name, $prefix)) {
+            return ucwords(substr($name, strlen($prefix)));
+        }
+        return ucwords($name);
+    }
+
+    public static function labelColor(?string $name): string
+    {
+        if ($name === null || $name === '') {
+            return 'gray';
+        }
+        $prefix = (string) config('issuetracker.statuses.prefix', 'status:');
+        if (str_starts_with($name, $prefix)) {
+            return match (substr($name, strlen($prefix))) {
+                'received' => 'gray',
+                'investigating' => 'info',
+                'implementing' => 'warning',
+                'pending' => 'primary',
+                'deployed' => 'success',
+                default => 'gray',
+            };
+        }
+        return match ($name) {
+            'bug' => 'danger',
+            'feature' => 'success',
+            'change' => 'warning',
+            default => 'primary',
+        };
+    }
+
     public static function firstKindLabel(array $rawLabels): ?array
     {
         $prefix = (string) config('issuetracker.statuses.prefix', 'status:');
@@ -106,8 +142,11 @@ class Issue extends Model
                     ->label('Issue Type')
                     ->options(function () {
                         $issue = new Issue();
-                        return collect($issue->getLabels())->pluck('name', 'name');
-
+                        $prefix = (string) config('issuetracker.statuses.prefix', 'status:');
+                        return collect($issue->getLabels())
+                            ->reject(fn ($l) => str_starts_with($l['name'] ?? '', $prefix))
+                            ->mapWithKeys(fn ($l) => [$l['name'] => self::displayLabel($l['name'])])
+                            ->all();
                     }),
                 TextInput::make('created_at_display')
                     ->label('Issue Created')

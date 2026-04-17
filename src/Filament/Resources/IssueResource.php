@@ -64,6 +64,7 @@ class IssueResource extends Resource
             ->schema(Issue::getForm());
     }
 
+
     public static function table(Table $table): Table
     {
         return $table

@@ -69,7 +69,9 @@ class IssueResource extends Resource
     {
         return $table
             ->query(function () {
-                return Issue::query()->whereNull('deleted_at');
+                return Issue::query()
+                    ->whereNull('deleted_at')
+                    ->withCount('comments');
             })
             ->recordClasses(function (Model $record) {
 
@@ -84,26 +86,24 @@ class IssueResource extends Resource
             ->columns([
                 TextColumn::make('title')
                     ->searchable()
-                    ->label('Issue Title'),
-                TextColumn::make('labels.name')
+                    ->label('Title'),
+                TextColumn::make('kind')
                     ->alignCenter()
                     ->placeholder('None')
-                    ->state(fn (?Model $record) => $record?->labels['name'] ?? null)
+                    ->state(fn (?Model $record) => $record?->kind ?? ($record?->labels['name'] ?? null))
                     ->formatStateUsing(fn ($state) => Issue::displayLabel($state))
                     ->badge()
                     ->color(fn ($state) => Issue::labelColor($state))
-                    ->label('Request Type'),
+                    ->label('Type'),
                 TextColumn::make('author.name')
                     ->label('Logged By'),
-                \Filament\Tables\Columns\IconColumn::make('has_notes')
-                    ->label('Comments')
-                    ->boolean()
-                    ->trueIcon('la-comment-solid')
-                    ->falseIcon('heroicon-o-x-mark')
-                    ->state(function ($record) {
-                        return $record->comments()->exists();
-                    }),
-                TextColumn::make('state')
+                TextColumn::make('comments_count')
+                    ->label('Notes')
+                    ->alignCenter()
+                    ->badge()
+                    ->color(fn ($state) => $state > 0 ? 'primary' : 'gray')
+                    ->formatStateUsing(fn ($state) => (int) $state),
+                TextColumn::make('status')
                     ->label('Status')
                     ->state(function (?Model $record) {
                         if (! $record) {
@@ -127,7 +127,7 @@ class IssueResource extends Resource
                     ->label('Closed')
                     ->since()
                     ->sortable()
-                    ->placeholder('Sill Open')
+                    ->placeholder('Still Open')
                     ->alignEnd(),
             ])
             ->actions([
@@ -199,10 +199,10 @@ class IssueResource extends Resource
 
             ->defaultPaginationPageOption(25)
             ->filters([
-                \Filament\Tables\Filters\SelectFilter::make('state')
+                \Filament\Tables\Filters\SelectFilter::make('status')
                     ->label('Status')
                     ->options([
-                        'open' => 'Open',
+                        'received' => 'Received',
                         'investigating' => 'Investigating',
                         'implementing' => 'Implementing',
                         'pending' => 'Pending',
@@ -211,25 +211,39 @@ class IssueResource extends Resource
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         if (empty($data['value'])) {
+                            // Default view: hide closed issues from the table
                             return $query->where('state', '!=', 'closed');
                         }
-                        if (in_array($data['value'], ['open', 'closed'], true)) {
-                            return $query->where('state', $data['value']);
+                        if ($data['value'] === 'closed') {
+                            return $query->where('state', 'closed');
                         }
-                        return $query->where('status', $data['value']);
+                        return $query
+                            ->where('state', '!=', 'closed')
+                            ->where('status', $data['value']);
                     }),
-                \Filament\Tables\Filters\SelectFilter::make('label')
-                    ->options(function(){
+                \Filament\Tables\Filters\SelectFilter::make('kind')
+                    ->label('Type')
+                    ->options(function () {
                         $issue = new Issue();
-                        return collect($issue->getLabels())->pluck('name', 'name');
+                        $prefix = (string) config('issuetracker.statuses.prefix', 'status:');
+                        return collect($issue->getLabels())
+                            ->reject(fn ($l) => str_starts_with($l['name'] ?? '', $prefix))
+                            ->mapWithKeys(fn ($l) => [
+                                $l['name'] => Issue::displayLabel($l['name']),
+                            ])
+                            ->all();
                     })
                     ->query(function (Builder $query, array $data): Builder {
                         if (empty($data['value'])) {
                             return $query;
                         }
-
-                        return $query->whereJsonContains('labels', ['name' => $data['value']]);
-                    })
+                        // Prefer the indexed `kind` column; fall back to JSON for
+                        // rows that haven't been resynced since the migration.
+                        return $query->where(function (Builder $q) use ($data) {
+                            $q->where('kind', $data['value'])
+                              ->orWhere('labels->name', $data['value']);
+                        });
+                    }),
             ])
             ;
     }

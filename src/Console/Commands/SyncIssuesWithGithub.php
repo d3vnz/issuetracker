@@ -63,6 +63,10 @@ class SyncIssuesWithGithub extends Command
                 'body' => $issue['body'],
                 'state' => $issue['state'],
                 'labels' => $kindLabel,
+                // Mirror the kind label name to its own column so we can index +
+                // query without poking JSON. Schema added in
+                // 2026_04_17_000001_add_kind_to_issues.
+                'kind' => $kindLabel['name'] ?? null,
                 'created_at' => $issue['created_at'],
                 'updated_at' => $issue['updated_at'],
             ];

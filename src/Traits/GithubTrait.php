@@ -70,5 +70,61 @@ trait GithubTrait
         });
 
     }
+
+    public function getIssueLabels($number): array
+    {
+        return GitHub::issues()->labels()->all(config('services.github.owner'), config('services.github.repo'), $number) ?? [];
+    }
+
+    public function addIssueLabel($number, string $name): void
+    {
+        $this->ensureRepoLabelExists($name);
+        GitHub::issues()->labels()->add(config('services.github.owner'), config('services.github.repo'), $number, $name);
+    }
+
+    public function removeIssueLabel($number, string $name): void
+    {
+        try {
+            GitHub::issues()->labels()->remove(config('services.github.owner'), config('services.github.repo'), $number, $name);
+        } catch (\Throwable $e) {
+            // Label may already be absent — treat as idempotent.
+        }
+    }
+
+    public function setIssueStatusLabel($number, string $newStatus, ?string $currentStatus = null): void
+    {
+        $prefix = (string) config('issuetracker.statuses.prefix', 'status:');
+
+        if ($currentStatus === null) {
+            foreach ($this->getIssueLabels($number) as $label) {
+                $name = is_array($label) ? ($label['name'] ?? null) : null;
+                if ($name && str_starts_with($name, $prefix) && $name !== $prefix . $newStatus) {
+                    $this->removeIssueLabel($number, $name);
+                }
+            }
+        } elseif ($currentStatus !== $newStatus) {
+            $this->removeIssueLabel($number, $prefix . $currentStatus);
+        }
+
+        $this->addIssueLabel($number, $prefix . $newStatus);
+    }
+
+    protected function ensureRepoLabelExists(string $name): void
+    {
+        $existing = collect($this->getLabels() ?: [])->pluck('name')->all();
+        if (in_array($name, $existing, true)) {
+            return;
+        }
+
+        try {
+            GitHub::issues()->labels()->create(config('services.github.owner'), config('services.github.repo'), [
+                'name' => $name,
+                'color' => 'ededed',
+            ]);
+            cache()->forget('github_labels');
+        } catch (\Throwable $e) {
+            // Concurrent creation or insufficient permission — swallow and let add() error propagate if label truly missing.
+        }
+    }
 }
 

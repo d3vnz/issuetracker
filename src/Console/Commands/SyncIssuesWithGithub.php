@@ -6,7 +6,9 @@
 
 namespace D3vnz\IssueTracker\Console\Commands;
 
+use D3vnz\IssueTracker\Mail\Issue\Closure;
 use D3vnz\IssueTracker\Mail\Issue\Comment;
+use D3vnz\IssueTracker\Mail\Issue\StatusUpdate;
 use D3vnz\IssueTracker\Models\Issue;
 use D3vnz\IssueTracker\Models\IssueComment;
 use App\Models\User;
@@ -18,68 +20,112 @@ class SyncIssuesWithGithub extends Command
 {
     use GithubTrait;
 
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
     protected $signature = 'github:sync-issues';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
-    protected $description = 'Command description';
+    protected $description = 'Sync issues from GitHub and emit notifications for status/state transitions.';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
         $issues = $this->getIssues();
-        if (is_array($issues) && sizeof($issues) > 0) {
-            foreach ($issues as $issue) {
-                $issue_res = Issue::updateOrCreate([
-                    'id' => $issue['id'],
+        if (! is_array($issues) || count($issues) === 0) {
+            return;
+        }
 
-                ], [
-                    'number' => $issue['number'],
-                    'title' => $issue['title'],
-                    'body' => $issue['body'],
-                    'state' => $issue['state'],
-                    'labels' => [
-                        'name' => $issue['labels'][0]['name'] ?? 'bug',
-                        'color' => $issue['labels'][0]['color'] ?? null,
-                        'id' => $issue['labels'][0]['id'] ?? null
-                    ],
-                    'created_at' => $issue['created_at'],
-                    'updated_at' => $issue['updated_at'],
-                ]);
-                if ($issue['comments'] > 0) {
-                    $comments = $this->getComments($issue);
-                    foreach ($comments as $comment) {
-                        $comment_res = IssueComment::updateOrCreate([
-                            'id' => $comment['id'],
-                            'issue_id' => $issue['id']
-                        ], [
-                            'body' => $comment['body'],
-                            'created_at' => $comment['created_at'],
-                            'updated_at' => $comment['updated_at'],
-                        ]);
-                        if ($comment_res->user_id == null && $issue_res->user_id != null && !$comment_res->notified_author) {
-                            Mail::to(User::find($issue_res->user_id))->send(new Comment($issue_res, $comment_res, $issue_res->author));
-                            $comment_res->update([
-                                'notified_author' => true
-                            ]);
+        $statusesEnabled = (bool) config('issuetracker.statuses.enabled', true);
+        $defaultStatus = (string) config('issuetracker.statuses.default', 'received');
+        $emailOnTransition = (bool) config('issuetracker.statuses.email_on_sync_transition', true);
 
-                        }
+        foreach ($issues as $issue) {
+            $rawLabels = is_array($issue['labels'] ?? null) ? $issue['labels'] : [];
+            $githubStatus = Issue::extractStatusFromLabels($rawLabels);
+            $kindLabel = Issue::firstKindLabel($rawLabels) ?? [
+                'name' => 'bug',
+                'color' => null,
+                'id' => null,
+            ];
 
+            $existing = Issue::find($issue['id']);
+            $previousState = $existing?->state;
+            $previousStatus = $existing?->status;
 
+            if ($statusesEnabled && $githubStatus === null) {
+                try {
+                    $this->setIssueStatusLabel($issue['number'], $defaultStatus);
+                    $githubStatus = $defaultStatus;
+                } catch (\Throwable $e) {
+                    $this->warn("Could not seed status label on issue #{$issue['number']}: {$e->getMessage()}");
+                }
+            }
+
+            $attributes = [
+                'number' => $issue['number'],
+                'title' => $issue['title'],
+                'body' => $issue['body'],
+                'state' => $issue['state'],
+                'labels' => $kindLabel,
+                'created_at' => $issue['created_at'],
+                'updated_at' => $issue['updated_at'],
+            ];
+
+            if ($statusesEnabled) {
+                $attributes['status'] = $githubStatus;
+                if ($previousStatus !== $githubStatus) {
+                    $attributes['status_changed_at'] = now();
+                }
+            }
+
+            if ($issue['state'] === 'closed' && $previousState !== 'closed') {
+                $attributes['closed_at'] = $issue['closed_at'] ?? now();
+            } elseif ($issue['state'] === 'open' && $previousState === 'closed') {
+                $attributes['closed_at'] = null;
+            }
+
+            $recentlyTransitioned = $existing ? $existing->recentlyTransitioned() : false;
+
+            $issue_res = Issue::updateOrCreate(['id' => $issue['id']], $attributes);
+
+            if ($emailOnTransition && $existing && $issue_res->user_id && ! $recentlyTransitioned) {
+                $this->dispatchTransitionMail($issue_res, $previousState, $previousStatus, $githubStatus);
+            }
+
+            if (($issue['comments'] ?? 0) > 0) {
+                $comments = $this->getComments($issue);
+                foreach ($comments as $comment) {
+                    $comment_res = IssueComment::updateOrCreate([
+                        'id' => $comment['id'],
+                        'issue_id' => $issue['id'],
+                    ], [
+                        'body' => $comment['body'],
+                        'created_at' => $comment['created_at'],
+                        'updated_at' => $comment['updated_at'],
+                    ]);
+                    if ($comment_res->user_id == null && $issue_res->user_id != null && ! $comment_res->notified_author) {
+                        Mail::to(User::find($issue_res->user_id))->send(new Comment($issue_res, $comment_res, $issue_res->author));
+                        $comment_res->update(['notified_author' => true]);
                     }
                 }
-
             }
+        }
+    }
+
+    protected function dispatchTransitionMail(Issue $issue, ?string $previousState, ?string $previousStatus, ?string $githubStatus): void
+    {
+        $user = User::find($issue->user_id);
+        if (! $user) {
+            return;
+        }
+
+        if ($issue->state === 'closed' && $previousState !== 'closed') {
+            Mail::to($user)->send(new Closure($user, $issue));
+            return;
+        }
+
+        if (! config('issuetracker.statuses.enabled', true)) {
+            return;
+        }
+
+        if ($githubStatus && $githubStatus !== $previousStatus && $previousStatus !== null) {
+            Mail::to($user)->send(new StatusUpdate($user, $issue, $githubStatus));
         }
     }
 }

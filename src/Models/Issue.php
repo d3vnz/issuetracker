@@ -28,7 +28,51 @@ class Issue extends Model
         return [
             'labels' => 'array',
             'closed_at' => 'timestamp',
+            'status_changed_at' => 'datetime',
         ];
+    }
+
+    public function currentStatus(): ?string
+    {
+        return $this->status ?: null;
+    }
+
+    public function recentlyTransitioned(?int $withinSeconds = null): bool
+    {
+        $withinSeconds ??= (int) config('issuetracker.statuses.transition_dedupe_seconds', 600);
+        if ($withinSeconds <= 0 || ! $this->status_changed_at) {
+            return false;
+        }
+        return $this->status_changed_at->gt(now()->subSeconds($withinSeconds));
+    }
+
+    public static function extractStatusFromLabels(array $rawLabels): ?string
+    {
+        $prefix = (string) config('issuetracker.statuses.prefix', 'status:');
+        foreach ($rawLabels as $label) {
+            $name = is_array($label) ? ($label['name'] ?? null) : null;
+            if ($name && str_starts_with($name, $prefix)) {
+                return substr($name, strlen($prefix));
+            }
+        }
+        return null;
+    }
+
+    public static function firstKindLabel(array $rawLabels): ?array
+    {
+        $prefix = (string) config('issuetracker.statuses.prefix', 'status:');
+        foreach ($rawLabels as $label) {
+            $name = is_array($label) ? ($label['name'] ?? null) : null;
+            if (! $name || str_starts_with($name, $prefix)) {
+                continue;
+            }
+            return [
+                'name' => $name,
+                'color' => $label['color'] ?? null,
+                'id' => $label['id'] ?? null,
+            ];
+        }
+        return null;
     }
 
     public function comments(): HasMany

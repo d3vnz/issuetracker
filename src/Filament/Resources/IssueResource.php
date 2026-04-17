@@ -115,13 +115,23 @@ class IssueResource extends Resource
                     }),
                 TextColumn::make('state')
                     ->label('Status')
+                    ->state(function (?Model $record) {
+                        if (! $record) {
+                            return null;
+                        }
+                        if ($record->state === 'closed') {
+                            return 'closed';
+                        }
+                        return $record->status ?: $record->state;
+                    })
                     ->formatStateUsing(fn($state) => ucfirst((string) $state))
                     ->color(function($state){
                         return match($state){
-                            'open' => 'gray',
+                            'open', 'received' => 'gray',
                             'investigating' => 'info',
                             'implementing' => 'warning',
                             'pending' => 'primary',
+                            'deployed' => 'success',
                             'closed' => 'success',
                             default => 'gray',
                         };
@@ -141,57 +151,7 @@ class IssueResource extends Resource
             ])
             ->actions([
                 ActionGroup::make([
-                    Action::make('markInvestigating')
-                        ->label('Mark Investigating')
-                        ->icon('heroicon-o-magnifying-glass')
-                        ->color('info')
-                        ->visible(fn(?Model $record) => $record && ! in_array($record->state, ['investigating', 'closed']))
-                        ->form([
-                            Forms\Components\RichEditor::make('note')
-                                ->label('Optional note to include in the notification email')
-                                ->columnSpanFull(),
-                        ])
-                        ->action(function (array $data, ?Model $record) {
-                            $record->update(['state' => 'investigating']);
-                            $user = \App\Models\User::find($record->user_id);
-                            if ($user) {
-                                Mail::to($user)->send(new StatusUpdate($user, $record, 'investigating', $data['note'] ?? null));
-                            }
-                        }),
-                    Action::make('markImplementing')
-                        ->label('Mark Implementing')
-                        ->icon('heroicon-o-wrench-screwdriver')
-                        ->color('warning')
-                        ->visible(fn(?Model $record) => $record && ! in_array($record->state, ['implementing', 'closed']))
-                        ->form([
-                            Forms\Components\RichEditor::make('note')
-                                ->label('Optional note to include in the notification email')
-                                ->columnSpanFull(),
-                        ])
-                        ->action(function (array $data, ?Model $record) {
-                            $record->update(['state' => 'implementing']);
-                            $user = \App\Models\User::find($record->user_id);
-                            if ($user) {
-                                Mail::to($user)->send(new StatusUpdate($user, $record, 'implementing', $data['note'] ?? null));
-                            }
-                        }),
-                    Action::make('markPending')
-                        ->label('Mark Pending')
-                        ->icon('heroicon-o-clock')
-                        ->color('primary')
-                        ->visible(fn(?Model $record) => $record && ! in_array($record->state, ['pending', 'closed']))
-                        ->form([
-                            Forms\Components\RichEditor::make('note')
-                                ->label('Optional note to include in the notification email')
-                                ->columnSpanFull(),
-                        ])
-                        ->action(function (array $data, ?Model $record) {
-                            $record->update(['state' => 'pending']);
-                            $user = \App\Models\User::find($record->user_id);
-                            if ($user) {
-                                Mail::to($user)->send(new StatusUpdate($user, $record, 'pending', $data['note'] ?? null));
-                            }
-                        }),
+                    ...self::makeStatusActions(),
                     Action::make('closeIssue')
                         ->label('Close Issue')
                         ->icon('heroicon-o-x-circle')
@@ -265,13 +225,17 @@ class IssueResource extends Resource
                         'investigating' => 'Investigating',
                         'implementing' => 'Implementing',
                         'pending' => 'Pending',
+                        'deployed' => 'Deployed',
                         'closed' => 'Closed',
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         if (empty($data['value'])) {
                             return $query->where('state', '!=', 'closed');
                         }
-                        return $query->where('state', $data['value']);
+                        if (in_array($data['value'], ['open', 'closed'], true)) {
+                            return $query->where('state', $data['value']);
+                        }
+                        return $query->where('status', $data['value']);
                     }),
                 \Filament\Tables\Filters\SelectFilter::make('label')
                     ->options(function(){
@@ -317,6 +281,57 @@ class IssueResource extends Resource
     {
         return [];
     }
+
+    protected static function makeStatusActions(): array
+    {
+        $specs = [
+            'markInvestigating' => ['label' => 'Mark Investigating', 'status' => 'investigating', 'icon' => 'heroicon-o-magnifying-glass', 'color' => 'info'],
+            'markImplementing'  => ['label' => 'Mark Implementing',  'status' => 'implementing',  'icon' => 'heroicon-o-wrench-screwdriver', 'color' => 'warning'],
+            'markPending'       => ['label' => 'Mark Pending',       'status' => 'pending',       'icon' => 'heroicon-o-clock', 'color' => 'primary'],
+            'markDeployed'      => ['label' => 'Mark Deployed',      'status' => 'deployed',      'icon' => 'heroicon-o-rocket-launch', 'color' => 'success'],
+        ];
+
+        $actions = [];
+        foreach ($specs as $name => $spec) {
+            $actions[] = Action::make($name)
+                ->label($spec['label'])
+                ->icon($spec['icon'])
+                ->color($spec['color'])
+                ->visible(fn(?Model $record) => $record && $record->state !== 'closed' && $record->status !== $spec['status'])
+                ->form([
+                    Forms\Components\RichEditor::make('note')
+                        ->label('Optional note to include in the notification email')
+                        ->columnSpanFull(),
+                ])
+                ->action(function (array $data, ?Model $record) use ($spec): void {
+                    $previousStatus = $record->status;
+
+                    try {
+                        $record->setIssueStatusLabel($record->number, $spec['status'], $previousStatus);
+                    } catch (\Throwable $e) {
+                        \Filament\Notifications\Notification::make()
+                            ->title('Could not update GitHub label')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                        return;
+                    }
+
+                    $record->update([
+                        'status' => $spec['status'],
+                        'status_changed_at' => now(),
+                    ]);
+
+                    $user = \App\Models\User::find($record->user_id);
+                    if ($user) {
+                        Mail::to($user)->send(new StatusUpdate($user, $record, $spec['status'], $data['note'] ?? null));
+                    }
+                });
+        }
+
+        return $actions;
+    }
+
     protected function getContrastColor($hexColor)
     {
         // Remove # if present

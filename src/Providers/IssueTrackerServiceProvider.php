@@ -36,6 +36,9 @@ class IssueTrackerServiceProvider extends ServiceProvider
             \Filament\Forms\Components\Grid::class => \Filament\Schemas\Components\Grid::class,
             \Filament\Tables\Actions\ActionGroup::class => \Filament\Actions\ActionGroup::class,
             \Filament\Tables\Actions\Action::class => \Filament\Actions\Action::class,
+            \Filament\Tables\Actions\CreateAction::class => \Filament\Actions\CreateAction::class,
+            \Filament\Tables\Actions\EditAction::class => \Filament\Actions\EditAction::class,
+            \Filament\Tables\Actions\DeleteAction::class => \Filament\Actions\DeleteAction::class,
         ];
 
         foreach ($aliases as $legacy => $modern) {

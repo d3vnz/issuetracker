@@ -23,7 +23,10 @@
   "autoload": {
     "psr-4": {
       "D3vnz\\IssueTracker\\": "src/"
-    }
+    },
+    "files": [
+      "src/bootstrap.php"
+    ]
   },
   "extra": {
     "laravel": {

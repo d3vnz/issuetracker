@@ -81,7 +81,8 @@ class IssueTrackerServiceProvider extends ServiceProvider
             ], 'd3vnz-issuetracker-config');
         }
 
-        if (config('issuetracker.ai.enabled')) {
+        // Local AI triage is suppressed when TicketMate is enabled — TM owns AI now.
+        if (config('issuetracker.ai.enabled') && ! \D3vnz\IssueTracker\Services\TicketmateClient::isEnabled()) {
             Issue::created(function (Issue $issue): void {
                 AnalyzeIssueJob::dispatch($issue);
             });

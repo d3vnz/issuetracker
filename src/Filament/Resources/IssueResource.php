@@ -8,24 +8,21 @@ namespace D3vnz\IssueTracker\Filament\Resources;
 
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\CommentsRelationManager;
+use D3vnz\IssueTracker\Mail\Issue\Closure;
 use D3vnz\IssueTracker\Mail\Issue\Comment;
 use D3vnz\IssueTracker\Mail\Issue\StatusUpdate;
 use D3vnz\IssueTracker\Models\Issue;
-use Filament\Forms\Form;
-use D3vnz\IssueTracker\Mail\Issue\Closure;
 use Filament\Forms;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
+use Filament\Tables\Actions\ActionGroup;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\ListIssues;
-use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\CreateIssue;
-use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\EditIssue;
 use Illuminate\Support\Facades\Mail;
-use Filament\Tables\Actions\ActionGroup;
 
 class IssueResource extends Resource
 {
@@ -341,9 +338,13 @@ class IssueResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            CommentsRelationManager::class
-        ];
+        // Comments live in TicketMate when TM is enabled (no local DB).
+        // The local CommentsRelationManager is also Filament-3-only — skip
+        // it on Filament 5 to avoid namespace-resolution failures.
+        if (\D3vnz\IssueTracker\Services\TicketmateClient::isEnabled()) return [];
+        if (! class_exists(\Filament\Tables\Actions\CreateAction::class)) return [];
+
+        return [CommentsRelationManager::class];
     }
 
     public static function getEloquentQuery(): Builder

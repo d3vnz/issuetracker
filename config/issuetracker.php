@@ -52,4 +52,27 @@ return [
         'strip_dev_only_blocks' => filter_var(env('ISSUETRACKER_STRIP_DEV_ONLY', true), FILTER_VALIDATE_BOOLEAN),
         'from_team_name' => env('ISSUETRACKER_MAIL_TEAM', 'the Development Team'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | TicketMate integration (optional)
+    |--------------------------------------------------------------------------
+    |
+    | When TICKETMATE_API_URL + TICKETMATE_API_TOKEN are set, the package will
+    | mirror new issues to TicketMate immediately and use TicketMate as the
+    | source of truth for listings (AI summaries, screenshots, etc.). The
+    | local `issues` table becomes a cache that can still be queried offline.
+    |
+    | When NOT set, the package keeps its existing local-only behaviour.
+    |
+    */
+    'ticketmate' => [
+        'enabled' => filled(env('TICKETMATE_API_URL')) && filled(env('TICKETMATE_API_TOKEN')),
+        'url' => rtrim((string) env('TICKETMATE_API_URL', ''), '/'),
+        'token' => env('TICKETMATE_API_TOKEN'),
+        // When true, listings in the consuming Filament app fetch from TicketMate
+        // rather than the local issues table.
+        'use_remote_listings' => filter_var(env('TICKETMATE_USE_REMOTE_LISTINGS', true), FILTER_VALIDATE_BOOLEAN),
+        'http_timeout' => (int) env('TICKETMATE_HTTP_TIMEOUT', 10),
+    ],
 ];

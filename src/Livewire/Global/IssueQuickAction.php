@@ -9,6 +9,7 @@ namespace D3vnz\IssueTracker\Livewire\Global;
 use D3vnz\IssueTracker\Mail\Issue\Confirmation;
 use D3vnz\IssueTracker\Mail\Issue\Notification as MailNotification;
 use D3vnz\IssueTracker\Models\Issue;
+use D3vnz\IssueTracker\Services\TicketmateClient;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -53,14 +54,30 @@ class IssueQuickAction extends Component implements HasActions, HasForms
                     ],
                 ]);
 
-                if (! config('issuetracker.ai.enabled')) {
-                    Mail::to(auth()->user())->send(new Confirmation(auth()->user(), $record));
+                $ticketmateEnabled = TicketmateClient::isEnabled();
+
+                // If TicketMate is wired up, push the real creator info (TM otherwise
+                // only sees the GitHub bot account) and let TM own the email side.
+                if ($ticketmateEnabled) {
+                    (new TicketmateClient())->attachCreator(
+                        githubIssueNumber: (int) $res['number'],
+                        creatorEmail: auth()->user()?->email,
+                        creatorName: trim(((auth()->user()->first_name ?? '') . ' ' . (auth()->user()->last_name ?? ''))) ?: (auth()->user()->name ?? null),
+                        creatorAppUrl: config('app.url'),
+                    );
+                } else {
+                    // Local-mode fallback: keep the original mail behaviour.
+                    if (! config('issuetracker.ai.enabled')) {
+                        Mail::to(auth()->user())->send(new Confirmation(auth()->user(), $record));
+                    }
+                    Mail::to('joel@d3v.nz')->send(new MailNotification(auth()->user(), $record, $res));
                 }
-                Mail::to('joel@d3v.nz')->send(new MailNotification(auth()->user(), $record, $res));
 
                 Notification::make()
                     ->title('Your ' . ucwords($data['labels']['name']) . ' has been created')
-                    ->body('A developer will respond to you if required and you will be notified via email as well of any updates.')
+                    ->body($ticketmateEnabled
+                        ? 'A developer will get back to you and you\'ll receive email updates as it progresses.'
+                        : 'A developer will respond to you if required and you will be notified via email as well of any updates.')
                     ->success()
                     ->send();
             });

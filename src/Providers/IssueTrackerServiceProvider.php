@@ -7,6 +7,7 @@
 namespace D3vnz\IssueTracker\Providers;
 
 
+use D3vnz\IssueTracker\Console\Commands\PullFromTicketmate;
 use D3vnz\IssueTracker\Console\Commands\SyncIssuesWithGithub;
 use D3vnz\IssueTracker\Jobs\AnalyzeIssueJob;
 use D3vnz\IssueTracker\Models\Issue;
@@ -57,6 +58,7 @@ class IssueTrackerServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 SyncIssuesWithGithub::class,
+                PullFromTicketmate::class,
             ]);
         }
     }

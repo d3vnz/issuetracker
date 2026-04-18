@@ -7,6 +7,9 @@
 namespace D3vnz\IssueTracker\Filament\Resources;
 
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages;
+use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\CreateIssue;
+use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\EditIssue;
+use D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages\ListIssues;
 use D3vnz\IssueTracker\Filament\Resources\IssueResource\RelationManagers\CommentsRelationManager;
 use D3vnz\IssueTracker\Mail\Issue\Closure;
 use D3vnz\IssueTracker\Mail\Issue\Comment;

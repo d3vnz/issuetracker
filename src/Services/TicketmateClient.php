@@ -45,6 +45,41 @@ class TicketmateClient
     }
 
     /**
+     * Ask TicketMate to create a brand-new GitHub issue (using TM's GitHub token)
+     * AND a corresponding ticket. The consuming app does NOT need a local
+     * GITHUB_TOKEN. Returns the created ticket payload, or null on failure.
+     *
+     * @return array{ticket_number:string,id:int,github_issue_number:int,github_url:string}|null
+     */
+    public function createIssue(string $title, string $body, ?string $kind = null, ?string $creatorEmail = null, ?string $creatorName = null, ?string $creatorAppUrl = null): ?array
+    {
+        if (! self::isEnabled()) return null;
+
+        try {
+            $resp = $this->request()->post('issues', array_filter([
+                'title' => $title,
+                'body' => $body,
+                'kind' => $kind,
+                'creator_email' => $creatorEmail,
+                'creator_name' => $creatorName,
+                'creator_app_url' => $creatorAppUrl,
+            ], fn ($v) => $v !== null && $v !== ''));
+
+            if (! $resp->successful()) {
+                logger()->warning('TicketmateClient::createIssue failed', [
+                    'status' => $resp->status(),
+                    'body' => $resp->body(),
+                ]);
+                return null;
+            }
+            return (array) $resp->json();
+        } catch (\Throwable $e) {
+            logger()->warning('TicketmateClient::createIssue exception', ['error' => $e->getMessage()]);
+            return null;
+        }
+    }
+
+    /**
      * Tell TicketMate who actually filed the issue (the logged-in user in the
      * consuming app, not the GitHub bot account that posted via API).
      * TicketMate will create / link a Contact and use this for confirmation emails.

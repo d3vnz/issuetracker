@@ -30,52 +30,78 @@ class IssueQuickAction extends Component implements HasActions, HasForms
             ->modalHeading(fn (array $arguments) => 'Report ' . ucwords($arguments['type'] ?? 'an Issue'))
             ->form(fn (array $arguments) => Issue::getForm($arguments['type'] ?? null))
             ->action(function (array $data) {
-                $issue = new Issue();
-                $res = $issue->createIssue([
-                    'title' => $data['title'],
-                    'body' => $data['body'],
-                    'assignees' => ['aotearoait'],
-                    'labels' => [
-                        'name' => $data['labels']['name'],
-                    ],
-                ]);
+                $kind = $data['labels']['name'] ?? 'bug';
+                $user = auth()->user();
+                $creatorName = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: ($user->name ?? null);
 
-                $record = Issue::create([
-                    'id' => $res['id'],
-                    'number' => $res['number'],
-                    'title' => $data['title'],
-                    'body' => $data['body'],
-                    'user_id' => auth()->id(),
-                    'state' => $res['state'],
-                    'labels' => [
-                        'name' => $res['labels'][0]['name'] ?? 'bug',
-                        'color' => $res['labels'][0]['color'] ?? null,
-                        'id' => $res['labels'][0]['id'] ?? null,
-                    ],
-                ]);
-
-                $ticketmateEnabled = TicketmateClient::isEnabled();
-
-                // If TicketMate is wired up, push the real creator info (TM otherwise
-                // only sees the GitHub bot account) and let TM own the email side.
-                if ($ticketmateEnabled) {
-                    (new TicketmateClient())->attachCreator(
-                        githubIssueNumber: (int) $res['number'],
-                        creatorEmail: auth()->user()?->email,
-                        creatorName: trim(((auth()->user()->first_name ?? '') . ' ' . (auth()->user()->last_name ?? ''))) ?: (auth()->user()->name ?? null),
+                if (TicketmateClient::isEnabled()) {
+                    // Centralised mode: TicketMate creates the GitHub issue with its own
+                    // token, then mirrors a Ticket. The consuming app needs no GITHUB_TOKEN.
+                    $created = (new TicketmateClient())->createIssue(
+                        title: $data['title'],
+                        body: $data['body'],
+                        kind: $kind,
+                        creatorEmail: $user?->email,
+                        creatorName: $creatorName,
                         creatorAppUrl: config('app.url'),
                     );
-                } else {
-                    // Local-mode fallback: keep the original mail behaviour.
-                    if (! config('issuetracker.ai.enabled')) {
-                        Mail::to(auth()->user())->send(new Confirmation(auth()->user(), $record));
+
+                    if (! $created) {
+                        Notification::make()
+                            ->title('Could not create issue')
+                            ->body('TicketMate did not respond. Try again or contact support.')
+                            ->danger()
+                            ->send();
+                        return;
                     }
-                    Mail::to('joel@d3v.nz')->send(new MailNotification(auth()->user(), $record, $res));
+
+                    // Mirror into local cache so the existing IssueResource UI sees it
+                    // immediately (the next ticketmate:sync run also catches it).
+                    Issue::updateOrCreate(
+                        ['number' => (int) $created['github_issue_number']],
+                        [
+                            'title' => $data['title'],
+                            'body' => $data['body'],
+                            'user_id' => $user?->id,
+                            'state' => 'open',
+                            'status' => 'received',
+                            'kind' => $kind,
+                            'labels' => ['name' => $kind, 'color' => null, 'id' => null],
+                        ],
+                    );
+                } else {
+                    // Local-only fallback: original GitHub-direct flow.
+                    $issue = new Issue();
+                    $res = $issue->createIssue([
+                        'title' => $data['title'],
+                        'body' => $data['body'],
+                        'assignees' => ['aotearoait'],
+                        'labels' => ['name' => $kind],
+                    ]);
+
+                    $record = Issue::create([
+                        'id' => $res['id'],
+                        'number' => $res['number'],
+                        'title' => $data['title'],
+                        'body' => $data['body'],
+                        'user_id' => $user?->id,
+                        'state' => $res['state'],
+                        'labels' => [
+                            'name' => $res['labels'][0]['name'] ?? 'bug',
+                            'color' => $res['labels'][0]['color'] ?? null,
+                            'id' => $res['labels'][0]['id'] ?? null,
+                        ],
+                    ]);
+
+                    if (! config('issuetracker.ai.enabled')) {
+                        Mail::to($user)->send(new Confirmation($user, $record));
+                    }
+                    Mail::to('joel@d3v.nz')->send(new MailNotification($user, $record, $res));
                 }
 
                 Notification::make()
-                    ->title('Your ' . ucwords($data['labels']['name']) . ' has been created')
-                    ->body($ticketmateEnabled
+                    ->title('Your ' . ucwords($kind) . ' has been created')
+                    ->body(TicketmateClient::isEnabled()
                         ? 'A developer will get back to you and you\'ll receive email updates as it progresses.'
                         : 'A developer will respond to you if required and you will be notified via email as well of any updates.')
                     ->success()

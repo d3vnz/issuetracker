@@ -234,7 +234,9 @@ class IssueResource extends Resource
                                 'state' => 'closed'
                             ]);
 
-                            Mail::to(\App\Models\User::find($record->user_id))->send(new Closure(\App\Models\User::find($record->user_id),$record));
+                            if (! \D3vnz\IssueTracker\Services\TicketmateClient::isEnabled()) {
+                                Mail::to(\App\Models\User::find($record->user_id))->send(new Closure(\App\Models\User::find($record->user_id),$record));
+                            }
 
 
                         }),
@@ -269,7 +271,9 @@ class IssueResource extends Resource
                                     'body' => $data['body'],
                                     'user_id' => auth()->id(),
                                 ]);
-                                Mail::to('joel@d3v.nz')->send(new \D3vnz\IssueTracker\Mail\Issue\Comment($record, $comment, auth()->user()));
+                                if (! \D3vnz\IssueTracker\Services\TicketmateClient::isEnabled()) {
+                                    Mail::to('joel@d3v.nz')->send(new \D3vnz\IssueTracker\Mail\Issue\Comment($record, $comment, auth()->user()));
+                                }
                             }
 
 
@@ -404,7 +408,7 @@ class IssueResource extends Resource
                     ]);
 
                     $user = \App\Models\User::find($record->user_id);
-                    if ($user) {
+                    if ($user && ! \D3vnz\IssueTracker\Services\TicketmateClient::isEnabled()) {
                         Mail::to($user)->send(new StatusUpdate($user, $record, $spec['status'], $data['note'] ?? null));
                     }
                 });

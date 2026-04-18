@@ -8,6 +8,7 @@ namespace D3vnz\IssueTracker\Filament\Resources\IssueResource\Pages;
 
 use D3vnz\IssueTracker\Filament\Resources\IssueResource;
 use D3vnz\IssueTracker\Mail\Issue\Closure;
+use D3vnz\IssueTracker\Services\TicketmateClient;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\Action as HeaderAction;
@@ -70,7 +71,9 @@ class EditIssue extends EditRecord
                                 'state' => 'closed'
                             ]);
 
-                            Mail::to(\App\Models\User::find($record->user_id))->send(new Closure(\App\Models\User::find($record->user_id),$record));
+                            if (! TicketmateClient::isEnabled()) {
+                                Mail::to(\App\Models\User::find($record->user_id))->send(new Closure(\App\Models\User::find($record->user_id),$record));
+                            }
 
 
                             return redirect()->to(IssueResource::getUrl('index'));

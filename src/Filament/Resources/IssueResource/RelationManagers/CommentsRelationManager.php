@@ -77,7 +77,9 @@ class CommentsRelationManager extends RelationManager
                             'body' => $data['body'],
                             'user_id' => auth()->id(),
                         ]);
-                        Mail::to('joel@d3v.nz')->send(new \D3vnz\IssueTracker\Mail\Issue\Comment($issue, $comment, auth()->user()));
+                        if (! \D3vnz\IssueTracker\Services\TicketmateClient::isEnabled()) {
+                            Mail::to('joel@d3v.nz')->send(new \D3vnz\IssueTracker\Mail\Issue\Comment($issue, $comment, auth()->user()));
+                        }
                         return $comment;
                     }),
             ])

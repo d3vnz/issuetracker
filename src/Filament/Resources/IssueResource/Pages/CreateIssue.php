@@ -11,6 +11,7 @@ use D3vnz\IssueTracker\Filament\Resources\IssueResource;
 use App\Models\Issue;
 use D3vnz\IssueTracker\Mail\Issue\Confirmation;
 use D3vnz\IssueTracker\Mail\Issue\Notification as MailNotification;
+use D3vnz\IssueTracker\Services\TicketmateClient;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
@@ -60,10 +61,12 @@ class CreateIssue extends CreateRecord
             })
         ]);
 
-        if (! config('issuetracker.ai.enabled')) {
-            Mail::to(auth()->user())->send(new Confirmation(auth()->user(), $record));
+        if (! TicketmateClient::isEnabled()) {
+            if (! config('issuetracker.ai.enabled')) {
+                Mail::to(auth()->user())->send(new Confirmation(auth()->user(), $record));
+            }
+            Mail::to('joel@d3v.nz')->send(new MailNotification(auth()->user(), $record, $res));
         }
-        Mail::to('joel@d3v.nz')->send(new MailNotification(auth()->user(), $record, $res));
 
 
         Notification::make()

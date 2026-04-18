@@ -11,6 +11,7 @@ use D3vnz\IssueTracker\Mail\Issue\Comment;
 use D3vnz\IssueTracker\Mail\Issue\StatusUpdate;
 use D3vnz\IssueTracker\Models\Issue;
 use D3vnz\IssueTracker\Models\IssueComment;
+use D3vnz\IssueTracker\Services\TicketmateClient;
 use App\Models\User;
 use D3vnz\IssueTracker\Traits\GithubTrait;
 use Illuminate\Console\Command;
@@ -26,6 +27,11 @@ class SyncIssuesWithGithub extends Command
 
     public function handle()
     {
+        if (TicketmateClient::isEnabled()) {
+            $this->info('TicketMate is enabled — local GitHub sync is disabled. Use ticketmate:sync to refresh the cache.');
+            return self::SUCCESS;
+        }
+
         $issues = $this->getIssues();
         if (! is_array($issues) || count($issues) === 0) {
             return;

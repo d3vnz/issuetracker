@@ -61,21 +61,28 @@ TICKETMATE_API_TOKEN=the-token-from-the-repo-page
 TICKETMATE_USE_REMOTE_LISTINGS=true
 ```
 
-When these are set:
+When these are set, the package runs in **fully centralised mode**:
 
-- New issues created via `IssueQuickAction` still go to GitHub. The package then immediately POSTs the *real* logged-in user's name + email to TicketMate so the ticket has a proper requester (instead of just the GitHub bot account).
-- TicketMate handles the **confirmation email** to that creator (using its branded templates). The package's own `Confirmation` / `Notification` mails are skipped.
-- The local `issues` table becomes a cache. Replace the GitHub poller with TicketMate's:
+- The consuming app does **NOT** need a `GITHUB_TOKEN` — TicketMate creates the GitHub issue with its own token and returns the result.
+- The package writes **no issue data to your local database**. Issues live in TicketMate (and GitHub). Locally they're cached for 10 minutes in your default `Cache` store (Redis if configured).
+- The Filament `IssueResource` table is rendered from that cache — first hit refreshes, subsequent hits within 10 minutes serve the snapshot.
+- The package sends **no emails**. TicketMate handles the branded confirmation to the issue creator (and any subsequent status / comment notifications).
+- Optional cron safety net (the lazy refresh on-render is usually sufficient):
 
 ```php
 // console.php
-// REMOVE: Schedule::command('github:sync-issues')->everyThirtyMinutes();
-Schedule::command('ticketmate:sync')->everyTenMinutes();
+Schedule::command('ticketmate:sync --quiet-on-empty')->everyTenMinutes();
 ```
 
-The `ticketmate:sync` command pulls workflow state, status, and closure timestamps from TicketMate, so the existing `IssueResource` UI keeps working unchanged but the source of truth is now TicketMate (which itself watches GitHub via webhook).
+Migrations from earlier versions (`issues` + `issue_comments` tables) are no longer needed when TicketMate is enabled. You can drop them safely:
 
-When `TICKETMATE_*` env vars are NOT set, the package keeps its full original behaviour (GitHub poll + local emails).
+```bash
+php artisan tinker
+>>> Schema::dropIfExists('issue_comments');
+>>> Schema::dropIfExists('issues');
+```
+
+When `TICKETMATE_*` env vars are NOT set, the package keeps its original behaviour (GitHub poll + local DB + local emails).
 
 ## Configuration reference
 

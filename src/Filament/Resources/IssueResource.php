@@ -64,9 +64,91 @@ class IssueResource extends Resource
             ->schema(Issue::getForm());
     }
 
+    /**
+     * TicketMate mode: render the Filament table from a cached array of issues
+     * fetched from TicketMate (no local DB access, no Eloquent model touched).
+     */
+    protected static function ticketmateTable(Table $table): Table
+    {
+        return $table
+            ->records(fn () => app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class)->all()->all())
+            ->paginated(false)
+            ->columns([
+                TextColumn::make('title')
+                    ->searchable()
+                    ->wrap()
+                    ->weight('semibold')
+                    ->label('Title'),
+                TextColumn::make('kind')
+                    ->alignCenter()
+                    ->placeholder('—')
+                    ->badge()
+                    ->color(fn ($state) => match ($state) {
+                        'bug' => 'danger',
+                        'feature' => 'success',
+                        'change' => 'warning',
+                        'question' => 'info',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn ($state) => $state ? ucfirst($state) : null)
+                    ->label('Type'),
+                TextColumn::make('workflow_state')
+                    ->label('Status')
+                    ->badge()
+                    ->placeholder('—')
+                    ->color(fn (?string $state) => match ($state) {
+                        'received' => 'gray',
+                        'investigating' => 'info',
+                        'implementing' => 'warning',
+                        'pending_review' => 'primary',
+                        'deployed' => 'success',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (?string $state) => $state ? ucwords(str_replace('_', ' ', $state)) : null),
+                TextColumn::make('ai_summary')
+                    ->label('AI summary')
+                    ->wrap()
+                    ->limit(120)
+                    ->placeholder('—')
+                    ->color('gray')
+                    ->size('xs')
+                    ->toggleable(),
+                TextColumn::make('updated_at')
+                    ->label('Age')
+                    ->since()
+                    ->sortable()
+                    ->alignRight(),
+            ])
+            ->actions([
+                Action::make('open')
+                    ->label('Open in TicketMate')
+                    ->icon('heroicon-o-arrow-top-right-on-square')
+                    ->url(fn (array $record) => $record['ticketmate_url'] ?? null, shouldOpenInNewTab: true),
+                Action::make('github')
+                    ->label('Open on GitHub')
+                    ->icon('heroicon-o-code-bracket-square')
+                    ->color('gray')
+                    ->url(fn (array $record) => $record['github_url'] ?? null, shouldOpenInNewTab: true),
+            ])
+            ->headerActions([
+                Action::make('refresh')
+                    ->label('Refresh from TicketMate')
+                    ->icon('heroicon-o-arrow-path')
+                    ->action(function () {
+                        app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class)->refresh();
+                    }),
+            ]);
+    }
+
 
     public static function table(Table $table): Table
     {
+        // TicketMate-mode: render entirely from the cached array Collection.
+        // No local DB rows are read or written.
+        if (\D3vnz\IssueTracker\Services\TicketmateClient::isEnabled()) {
+            return self::ticketmateTable($table);
+        }
+
         return $table
             ->query(function () {
                 return Issue::query()

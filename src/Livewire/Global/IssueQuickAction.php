@@ -10,6 +10,7 @@ use D3vnz\IssueTracker\Mail\Issue\Confirmation;
 use D3vnz\IssueTracker\Mail\Issue\Notification as MailNotification;
 use D3vnz\IssueTracker\Models\Issue;
 use D3vnz\IssueTracker\Services\TicketmateClient;
+use D3vnz\IssueTracker\Services\TicketmateIssuesCache;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
@@ -55,20 +56,9 @@ class IssueQuickAction extends Component implements HasActions, HasForms
                         return;
                     }
 
-                    // Mirror into local cache so the existing IssueResource UI sees it
-                    // immediately (the next ticketmate:sync run also catches it).
-                    Issue::updateOrCreate(
-                        ['number' => (int) $created['github_issue_number']],
-                        [
-                            'title' => $data['title'],
-                            'body' => $data['body'],
-                            'user_id' => $user?->id,
-                            'state' => 'open',
-                            'status' => 'received',
-                            'kind' => $kind,
-                            'labels' => ['name' => $kind, 'color' => null, 'id' => null],
-                        ],
-                    );
+                    // Bust the cache so the next IssueResource render pulls fresh
+                    // from TicketMate (which now includes this new issue).
+                    app(TicketmateIssuesCache::class)->bust();
                 } else {
                     // Local-only fallback: original GitHub-direct flow.
                     $issue = new Issue();

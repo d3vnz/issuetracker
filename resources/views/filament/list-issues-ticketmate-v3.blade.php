@@ -1,108 +1,137 @@
 <x-filament-panels::page>
     @php
         $rows = $this->getTicketmateRows();
+        // Inline kind/state colour pairs — done as raw CSS rather than Tailwind
+        // classes so this works regardless of whether the host app's Tailwind
+        // build includes our package views in its content paths.
         $kindColors = [
-            'bug' => 'bg-red-100 text-red-700',
-            'feature' => 'bg-emerald-100 text-emerald-700',
-            'change' => 'bg-amber-100 text-amber-700',
-            'question' => 'bg-blue-100 text-blue-700',
+            'bug' =>      ['bg' => '#fee2e2', 'fg' => '#b91c1c'],
+            'feature' =>  ['bg' => '#d1fae5', 'fg' => '#047857'],
+            'change' =>   ['bg' => '#fef3c7', 'fg' => '#b45309'],
+            'question' => ['bg' => '#dbeafe', 'fg' => '#1d4ed8'],
         ];
         $stateColors = [
-            'received' => 'bg-gray-100 text-gray-700',
-            'investigating' => 'bg-blue-100 text-blue-700',
-            'implementing' => 'bg-amber-100 text-amber-700',
-            'pending_review' => 'bg-indigo-100 text-indigo-700',
-            'deployed' => 'bg-emerald-100 text-emerald-700',
+            'received' =>      ['bg' => '#f3f4f6', 'fg' => '#374151'],
+            'investigating' => ['bg' => '#dbeafe', 'fg' => '#1d4ed8'],
+            'implementing' =>  ['bg' => '#fef3c7', 'fg' => '#b45309'],
+            'pending_review' => ['bg' => '#e0e7ff', 'fg' => '#4338ca'],
+            'deployed' =>      ['bg' => '#d1fae5', 'fg' => '#047857'],
         ];
     @endphp
 
-    <div class="flex justify-end mb-4">
-        <button
-            type="button"
-            wire:click="refreshTicketmate"
-            wire:loading.attr="disabled"
-            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary-600 text-white text-sm font-semibold hover:bg-primary-500 disabled:opacity-50"
-        >
-            <svg class="w-4 h-4" wire:loading.remove wire:target="refreshTicketmate" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-            <svg class="w-4 h-4 animate-spin" wire:loading wire:target="refreshTicketmate" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"/><path fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" class="opacity-75"/></svg>
-            Refresh from TicketMate
-        </button>
-    </div>
+    {{-- Self-contained styles. CSS variables flip on .dark or [data-theme=dark]
+         so we follow whichever convention Filament uses. Custom-property values
+         use inherit-friendly RGB so the theme switch is instant. --}}
+    <style>
+        .tm-list { --tm-fg: #111827; --tm-fg-muted: #6b7280; --tm-fg-subtle: #9ca3af;
+                   --tm-bg: #ffffff; --tm-bg-alt: #f9fafb; --tm-border: #e5e7eb;
+                   --tm-link: #2563eb; --tm-link-hover: #1d4ed8;
+                   --tm-row-hover: #f9fafb; }
+        .dark .tm-list, [data-theme="dark"] .tm-list {
+                   --tm-fg: #f3f4f6; --tm-fg-muted: #9ca3af; --tm-fg-subtle: #6b7280;
+                   --tm-bg: #111827; --tm-bg-alt: #1f2937; --tm-border: #374151;
+                   --tm-link: #60a5fa; --tm-link-hover: #93c5fd;
+                   --tm-row-hover: rgba(255,255,255,0.03); }
+        .tm-list .tm-card     { border: 1px solid var(--tm-border); background: var(--tm-bg); border-radius: 12px; overflow: hidden; }
+        .tm-list table        { width: 100%; font-size: 14px; border-collapse: collapse; }
+        .tm-list thead        { background: var(--tm-bg-alt); }
+        .tm-list th           { text-align: left; padding: 10px 16px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--tm-fg-muted); font-weight: 600; }
+        .tm-list td           { padding: 12px 16px; vertical-align: top; border-top: 1px solid var(--tm-border); color: var(--tm-fg); }
+        .tm-list tbody tr:hover { background: var(--tm-row-hover); }
+        .tm-list .tm-title    { font-weight: 600; color: var(--tm-fg); }
+        .tm-list .tm-meta     { font-size: 11px; color: var(--tm-fg-muted); margin-top: 2px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .tm-list .tm-summary  { font-size: 12px; color: var(--tm-fg-muted); max-width: 22rem; }
+        .tm-list .tm-age      { font-size: 11px; color: var(--tm-fg-subtle); white-space: nowrap; text-align: right; }
+        .tm-list .tm-empty    { padding: 32px; text-align: center; font-size: 14px; color: var(--tm-fg-muted); }
+        .tm-list .tm-badge    { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 500; line-height: 1.4; }
+        .tm-list .tm-link     { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--tm-link); text-decoration: none; }
+        .tm-list .tm-link:hover { color: var(--tm-link-hover); text-decoration: underline; }
+        .tm-list .tm-link.tm-link-muted { color: var(--tm-fg-muted); margin-left: 8px; }
+        .tm-list .tm-toolbar  { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+        .tm-list .tm-btn      { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; background: #2563eb; color: #ffffff; font-size: 14px; font-weight: 600; border: 0; cursor: pointer; }
+        .tm-list .tm-btn:hover:not(:disabled) { background: #1d4ed8; }
+        .tm-list .tm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .tm-list .tm-spin     { animation: tm-spin 1s linear infinite; }
+        @keyframes tm-spin { to { transform: rotate(360deg); } }
+    </style>
 
-    <div class="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 overflow-hidden">
-        @if (empty($rows))
-            <div class="p-8 text-center text-sm text-gray-500">
-                No issues yet. Issues created from this app via the Report-a-Bug modal will appear here.
-            </div>
-        @else
-            <table class="w-full text-sm">
-                <thead class="text-[10px] uppercase tracking-wider text-gray-500 bg-gray-50 dark:bg-gray-800">
-                    <tr>
-                        <th class="text-left px-4 py-3">Title</th>
-                        <th class="text-left px-4 py-3">Type</th>
-                        <th class="text-left px-4 py-3">Status</th>
-                        <th class="text-left px-4 py-3">AI summary</th>
-                        <th class="text-right px-4 py-3">Age</th>
-                        <th class="text-right px-4 py-3">Open</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-100 dark:divide-white/5">
-                    @foreach ($rows as $row)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/40">
-                            <td class="px-4 py-3 align-top max-w-md">
-                                <div class="font-semibold text-gray-900 dark:text-gray-100">{{ $row['title'] ?? '(untitled)' }}</div>
-                                @if (! empty($row['ticket_number']))
-                                    <div class="text-[11px] font-mono text-gray-500 mt-0.5">{{ $row['ticket_number'] }}</div>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 align-top">
-                                @if (! empty($row['kind']))
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium {{ $kindColors[$row['kind']] ?? 'bg-gray-100 text-gray-700' }}">
-                                        {{ ucfirst($row['kind']) }}
-                                    </span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 align-top">
-                                @if (! empty($row['workflow_state']))
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium {{ $stateColors[$row['workflow_state']] ?? 'bg-gray-100 text-gray-700' }}">
-                                        {{ ucwords(str_replace('_', ' ', $row['workflow_state'])) }}
-                                    </span>
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 align-top text-xs text-gray-600 dark:text-gray-400 max-w-sm">
-                                {{ \Illuminate\Support\Str::limit($row['ai_summary'] ?? '—', 120) }}
-                            </td>
-                            <td class="px-4 py-3 align-top text-right text-xs text-gray-500 whitespace-nowrap">
-                                @if (! empty($row['updated_at']))
-                                    {{ \Illuminate\Support\Carbon::parse($row['updated_at'])->diffForHumans() }}
-                                @else
-                                    —
-                                @endif
-                            </td>
-                            <td class="px-4 py-3 align-top text-right whitespace-nowrap">
-                                @if (! empty($row['id']))
-                                    <button
-                                        type="button"
-                                        wire:click="openInTicketmate({{ (int) $row['id'] }})"
-                                        wire:loading.attr="disabled"
-                                        wire:target="openInTicketmate({{ (int) $row['id'] }})"
-                                        class="inline-flex items-center gap-1 text-xs text-primary-600 hover:underline disabled:opacity-50"
-                                        title="Sign you in to TicketMate as {{ auth()->user()?->email }} and open this ticket"
-                                    >
-                                        TicketMate
-                                        <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7m0-7L10 14M5 5v14h14"/></svg>
-                                    </button>
-                                @endif
-                                @if (! empty($row['github_url']))
-                                    <a href="{{ $row['github_url'] }}" target="_blank" class="inline-flex items-center gap-1 text-xs text-gray-500 hover:underline ml-2">
-                                        GitHub
-                                    </a>
-                                @endif
-                            </td>
+    <div class="tm-list">
+        <div class="tm-toolbar">
+            <button type="button" wire:click="refreshTicketmate" wire:loading.attr="disabled" class="tm-btn">
+                <svg style="width:16px;height:16px" wire:loading.remove wire:target="refreshTicketmate" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                <svg style="width:16px;height:16px" class="tm-spin" wire:loading wire:target="refreshTicketmate" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity:0.25"/><path fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" style="opacity:0.75"/></svg>
+                Refresh from TicketMate
+            </button>
+        </div>
+
+        <div class="tm-card">
+            @if (empty($rows))
+                <div class="tm-empty">No issues yet. Issues created from this app via the Report-a-Bug modal will appear here.</div>
+            @else
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>AI summary</th>
+                            <th style="text-align:right">Age</th>
+                            <th style="text-align:right">Open</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        @endif
+                    </thead>
+                    <tbody>
+                        @foreach ($rows as $row)
+                            <tr>
+                                <td style="max-width:24rem">
+                                    <div class="tm-title">{{ $row['title'] ?? '(untitled)' }}</div>
+                                    @if (! empty($row['ticket_number']))
+                                        <div class="tm-meta">{{ $row['ticket_number'] }}</div>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if (! empty($row['kind']))
+                                        @php $c = $kindColors[$row['kind']] ?? ['bg' => '#f3f4f6', 'fg' => '#374151']; @endphp
+                                        <span class="tm-badge" style="background:{{ $c['bg'] }};color:{{ $c['fg'] }}">{{ ucfirst($row['kind']) }}</span>
+                                    @endif
+                                </td>
+                                <td>
+                                    @if (! empty($row['workflow_state']))
+                                        @php $c = $stateColors[$row['workflow_state']] ?? ['bg' => '#f3f4f6', 'fg' => '#374151']; @endphp
+                                        <span class="tm-badge" style="background:{{ $c['bg'] }};color:{{ $c['fg'] }}">{{ ucwords(str_replace('_', ' ', $row['workflow_state'])) }}</span>
+                                    @endif
+                                </td>
+                                <td class="tm-summary">{{ \Illuminate\Support\Str::limit($row['ai_summary'] ?? '—', 120) }}</td>
+                                <td class="tm-age">
+                                    @if (! empty($row['updated_at']))
+                                        {{ \Illuminate\Support\Carbon::parse($row['updated_at'])->diffForHumans() }}
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                                <td style="text-align:right;white-space:nowrap">
+                                    @if (! empty($row['id']))
+                                        <button
+                                            type="button"
+                                            wire:click="openInTicketmate({{ (int) $row['id'] }})"
+                                            wire:loading.attr="disabled"
+                                            wire:target="openInTicketmate({{ (int) $row['id'] }})"
+                                            class="tm-link"
+                                            style="background:transparent;border:0;cursor:pointer;padding:0"
+                                            title="Sign you in to TicketMate as {{ auth()->user()?->email }} and open this ticket"
+                                        >
+                                            TicketMate
+                                            <svg style="width:12px;height:12px" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7m0-7L10 14M5 5v14h14"/></svg>
+                                        </button>
+                                    @endif
+                                    @if (! empty($row['github_url']))
+                                        <a href="{{ $row['github_url'] }}" target="_blank" class="tm-link tm-link-muted">GitHub</a>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+        </div>
     </div>
 </x-filament-panels::page>

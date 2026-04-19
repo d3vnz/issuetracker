@@ -22,8 +22,15 @@ $aliases = [
 ];
 
 foreach ($aliases as $legacy => $modern) {
-    if (class_exists($legacy, false) || interface_exists($legacy, false)) {
-        continue; // legacy already real (Filament 3 install)
+    // CRITICAL: do NOT pass `false` to class_exists here — that would skip
+    // the autoloader and return false even when the legacy class genuinely
+    // exists on disk (Filament 3 ships real Filament\Tables\Actions\Action
+    // etc). The resulting bogus alias would make Filament 3's table builder
+    // try to call ->table() on the v5 Filament\Actions\Action, which has
+    // no such method — exploding every table render with
+    // "Method Filament\Actions\Action::table does not exist".
+    if (class_exists($legacy) || interface_exists($legacy)) {
+        continue; // legacy already real (Filament 3 install) — no-op
     }
     if (! class_exists($modern)) {
         continue; // modern not available either — nothing to alias

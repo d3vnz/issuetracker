@@ -87,6 +87,37 @@ class TicketmateClient
      * Safe to call before the GitHub webhook has hit TicketMate — TM will
      * upsert a placeholder ticket and reconcile when the webhook arrives.
      */
+    /**
+     * Mint a per-viewer login URL for a TicketMate ticket. Used by the
+     * "Open in TicketMate" buttons in the IssueResource — each STAFF
+     * viewer of the consuming app gets a magic link bound to their own
+     * email so they auto-log into the portal as themselves, NOT as the
+     * ticket's original requester.
+     *
+     * Returns the staff /admin URL fallback if the API call fails.
+     */
+    public function loginAs(int $ticketId, ?string $viewerEmail, ?string $viewerName = null): string
+    {
+        $base = rtrim((string) config('issuetracker.ticketmate.url'), '/');
+        $fallback = $base . '/admin/tickets/' . $ticketId;
+
+        if (! self::isEnabled() || ! $viewerEmail) return $fallback;
+
+        try {
+            $resp = $this->request()->post('issues/login-as', array_filter([
+                'ticket_id' => $ticketId,
+                'viewer_email' => $viewerEmail,
+                'viewer_name' => $viewerName,
+            ], fn ($v) => $v !== null && $v !== ''));
+
+            if (! $resp->successful()) return $fallback;
+            $url = (string) $resp->json('url', '');
+            return $url !== '' ? $url : $fallback;
+        } catch (\Throwable) {
+            return $fallback;
+        }
+    }
+
     public function attachCreator(int $githubIssueNumber, ?string $creatorEmail, ?string $creatorName, ?string $creatorAppUrl = null): bool
     {
         if (! self::isEnabled()) return false;

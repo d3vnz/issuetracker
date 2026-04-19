@@ -42,6 +42,21 @@ class ListIssues extends ListRecords
         return app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class)->all()->all();
     }
 
+    /**
+     * Wire-clicked from the v3 Blade. Asks TicketMate to mint a magic-link
+     * URL bound to THIS viewer's email (not the ticket's original requester),
+     * then opens it in a new tab. Means staff clicking from the consuming
+     * app's IssueResource auto-log into TM as themselves.
+     */
+    public function openInTicketmate(int $ticketId): void
+    {
+        $user = auth()->user();
+        $email = $user?->email;
+        $name = trim((string) ($user?->first_name ?? '') . ' ' . (string) ($user?->last_name ?? '')) ?: ($user?->name ?? null);
+        $url = (new TicketmateClient())->loginAs($ticketId, $email, $name);
+        $this->js('window.open(' . json_encode($url) . ', "_blank")');
+    }
+
     public function refreshTicketmate(): void
     {
         $cache = app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class);

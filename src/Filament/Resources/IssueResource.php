@@ -162,7 +162,14 @@ class IssueResource extends Resource
                 Action::make('open')
                     ->label('Open in TicketMate')
                     ->icon('heroicon-o-arrow-top-right-on-square')
-                    ->url(fn (array $record) => $record['ticketmate_url'] ?? null, shouldOpenInNewTab: true),
+                    ->action(function (array $record, $livewire) {
+                        $user = auth()->user();
+                        $email = $user?->email;
+                        $name = trim((string) ($user?->first_name ?? '') . ' ' . (string) ($user?->last_name ?? '')) ?: ($user?->name ?? null);
+                        $url = (new \D3vnz\IssueTracker\Services\TicketmateClient())
+                            ->loginAs((int) ($record['id'] ?? 0), $email, $name);
+                        $livewire->js('window.open(' . json_encode($url) . ', "_blank")');
+                    }),
                 Action::make('github')
                     ->label('Open on GitHub')
                     ->icon('heroicon-o-code-bracket-square')

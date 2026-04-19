@@ -80,11 +80,18 @@
                                 @endif
                             </td>
                             <td class="px-4 py-3 align-top text-right whitespace-nowrap">
-                                @if (! empty($row['ticketmate_url']))
-                                    <a href="{{ $row['ticketmate_url'] }}" target="_blank" class="inline-flex items-center gap-1 text-xs text-primary-600 hover:underline">
+                                @if (! empty($row['id']))
+                                    <button
+                                        type="button"
+                                        wire:click="openInTicketmate({{ (int) $row['id'] }})"
+                                        wire:loading.attr="disabled"
+                                        wire:target="openInTicketmate({{ (int) $row['id'] }})"
+                                        class="inline-flex items-center gap-1 text-xs text-primary-600 hover:underline disabled:opacity-50"
+                                        title="Sign you in to TicketMate as {{ auth()->user()?->email }} and open this ticket"
+                                    >
                                         TicketMate
                                         <svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 3h7v7m0-7L10 14M5 5v14h14"/></svg>
-                                    </a>
+                                    </button>
                                 @endif
                                 @if (! empty($row['github_url']))
                                     <a href="{{ $row['github_url'] }}" target="_blank" class="inline-flex items-center gap-1 text-xs text-gray-500 hover:underline ml-2">

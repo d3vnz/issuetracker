@@ -53,6 +53,28 @@ class IssueResource extends Resource
         return static::shouldRegisterNavigation();
     }
 
+    /**
+     * In TicketMate-centralised mode the floating Report-a-Bug modal is the
+     * only path that creates issues correctly (it routes through TM, which
+     * uses TM's own GITHUB_TOKEN against the right repo). The Filament
+     * resource pages still call GitHub directly via the GithubTrait — that
+     * doesn't work when the consuming app has no/wrong GITHUB_TOKEN.
+     */
+    public static function canCreate(): bool
+    {
+        return ! \D3vnz\IssueTracker\Services\TicketmateClient::isEnabled();
+    }
+
+    public static function canEdit($record): bool
+    {
+        return ! \D3vnz\IssueTracker\Services\TicketmateClient::isEnabled();
+    }
+
+    public static function canDelete($record): bool
+    {
+        return ! \D3vnz\IssueTracker\Services\TicketmateClient::isEnabled();
+    }
+
     public static function getNavigationIcon(): string|\Illuminate\Contracts\Support\Htmlable|null
     {
         return 'heroicon-o-bug-ant';

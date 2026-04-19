@@ -29,6 +29,7 @@ class ListIssues extends ListRecords
                 ->label('New Issue')
                 ->icon('heroicon-o-plus')
                 ->color('primary')
+                ->visible(fn () => ! TicketmateClient::isEnabled())
                 ->modalHeading(fn (array $arguments) => 'Report ' . ($arguments['type'] ?? 'an Issue'))
                 ->form(fn (array $arguments) => Issue::getForm($arguments['type'] ?? null))
                 ->action(function (array $data) {

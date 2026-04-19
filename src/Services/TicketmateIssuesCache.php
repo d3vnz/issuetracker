@@ -69,10 +69,17 @@ class TicketmateIssuesCache
         $base = rtrim((string) config('issuetracker.ticketmate.url'), '/');
 
         $issues = collect($rows)
-            ->map(fn (array $r) => array_merge($r, [
-                'key' => (string) ($r['id'] ?? $r['github_issue_number'] ?? uniqid()),
-                'ticketmate_url' => $base . '/admin/tickets/' . ($r['id'] ?? ''),
-            ]))
+            ->map(function (array $r) use ($base) {
+                // Prefer the URL the API gave us (TicketMate v11+ returns a
+                // signed magic-link that auto-logs portal-enabled requesters
+                // into /portal/tickets/{id}). Fall back to the staff /admin
+                // URL only when the API didn't include one.
+                $url = $r['ticketmate_url'] ?? ($base . '/admin/tickets/' . ($r['id'] ?? ''));
+                return array_merge($r, [
+                    'key' => (string) ($r['id'] ?? $r['github_issue_number'] ?? uniqid()),
+                    'ticketmate_url' => $url,
+                ]);
+            })
             ->all();
 
         // Cache slightly longer than the TTL so a brief outage doesn't drop the snapshot.

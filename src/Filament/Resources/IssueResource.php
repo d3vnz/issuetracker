@@ -94,6 +94,8 @@ class IssueResource extends Resource
     {
         return $table
             ->records(fn () => app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class)->all()->all())
+            ->recordUrl(null)
+            ->recordAction(null)
             ->paginated(false)
             ->columns([
                 TextColumn::make('title')
@@ -157,7 +159,14 @@ class IssueResource extends Resource
                     ->label('Refresh from TicketMate')
                     ->icon('heroicon-o-arrow-path')
                     ->action(function () {
-                        app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class)->refresh();
+                        $cache = app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class);
+                        $cache->bust();
+                        $rows = $cache->refresh();
+                        \Filament\Notifications\Notification::make()
+                            ->title('Refreshed from TicketMate')
+                            ->body(count($rows) . ' issue(s) loaded.')
+                            ->success()
+                            ->send();
                     }),
             ]);
     }

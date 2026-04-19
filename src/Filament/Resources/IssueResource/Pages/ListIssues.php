@@ -22,6 +22,38 @@ class ListIssues extends ListRecords
 {
     protected static string $resource = IssueResource::class;
 
+    /**
+     * In Filament 3 we can't feed the table a cached array (no Table::records()),
+     * so we render the TicketMate-cached issues via a custom Blade view that
+     * bypasses the Filament table component. Filament 5 keeps using the
+     * native ->records() API on the resource's table().
+     */
+    public function getView(): string
+    {
+        if (TicketmateClient::isEnabled() && ! method_exists(\Filament\Tables\Table::class, 'records')) {
+            return 'd3vnz-issuetracker::filament.list-issues-ticketmate-v3';
+        }
+        return parent::getView();
+    }
+
+    /** Used by the v3 custom Blade only. */
+    public function getTicketmateRows(): array
+    {
+        return app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class)->all()->all();
+    }
+
+    public function refreshTicketmate(): void
+    {
+        $cache = app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class);
+        $cache->bust();
+        $rows = $cache->refresh();
+        Notification::make()
+            ->title('Refreshed from TicketMate')
+            ->body(count($rows) . ' issue(s) loaded.')
+            ->success()
+            ->send();
+    }
+
     protected function getHeaderActions(): array
     {
         return [

@@ -92,6 +92,21 @@ class IssueResource extends Resource
      */
     protected static function ticketmateTable(Table $table): Table
     {
+        // Filament 3 has no Table::records() — it only accepts Eloquent
+        // queries. In v3 we render TM-cached issues via a custom Blade
+        // (see ListIssues::getView()), so the framework's default table
+        // never gets shown. Return an always-empty Eloquent table here
+        // just so anything that still calls table() (badge counts, etc.)
+        // doesn't crash.
+        if (! method_exists($table, 'records')) {
+            return $table
+                ->query(fn () => Issue::query()->whereRaw('1 = 0'))
+                ->paginated(false)
+                ->columns([
+                    TextColumn::make('title')->label('Title'),
+                ]);
+        }
+
         return $table
             ->records(fn () => app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class)->all()->all())
             ->recordUrl(null)

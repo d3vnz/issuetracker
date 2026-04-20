@@ -25,20 +25,33 @@ class TicketmateIssuesCache
     public function __construct(protected TicketmateClient $client) {}
 
     /**
+     * Returns the cached issues filtered by lifecycle state.
+     *
+     * The cache itself ALWAYS stores the full set (open + closed) — we
+     * filter on read so toggling between Open / Closed / All is instant
+     * with no extra TicketMate round-trip.
+     *
+     * @param  string  $filter  'open' (default) | 'closed' | 'all'
      * @return \Illuminate\Support\Collection<int,array<string,mixed>>
      */
-    public function all(): Collection
+    public function all(string $filter = 'open'): Collection
     {
         if (! TicketmateClient::isEnabled()) {
             return collect();
         }
 
         $cached = Cache::get(self::CACHE_KEY);
-        if (is_array($cached) && $this->isFresh()) {
-            return collect($cached);
+        if (! is_array($cached) || ! $this->isFresh()) {
+            $cached = $this->refresh();
         }
 
-        return collect($this->refresh());
+        $rows = collect($cached);
+
+        return match ($filter) {
+            'closed' => $rows->filter(fn (array $r) => in_array($r['status'] ?? '', ['resolved', 'closed'], true))->values(),
+            'all'    => $rows->values(),
+            default  => $rows->filter(fn (array $r) => ! in_array($r['status'] ?? '', ['resolved', 'closed'], true))->values(),
+        };
     }
 
     public function isFresh(): bool

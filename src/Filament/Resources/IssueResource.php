@@ -108,7 +108,15 @@ class IssueResource extends Resource
         }
 
         return $table
-            ->records(fn () => app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class)->all()->all())
+            // Records are filtered by ListIssues::$ticketmateFilter (open|closed|all).
+            // The closure runs in the Livewire context, so $livewire is the
+            // ListIssues page instance; we read its property directly.
+            ->records(function ($livewire) {
+                $filter = $livewire->ticketmateFilter ?? 'open';
+                return app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class)
+                    ->all($filter)
+                    ->all();
+            })
             ->recordUrl(null)
             ->recordAction(null)
             ->paginated(false)
@@ -177,9 +185,26 @@ class IssueResource extends Resource
                     ->url(fn (array $record) => $record['github_url'] ?? null, shouldOpenInNewTab: true),
             ])
             ->headerActions([
+                // Open/Closed/All toggle. Each action just flips the
+                // ListIssues page's `$ticketmateFilter` Livewire property
+                // (which is reflected to ?state= in the URL via getQueryString),
+                // and Filament re-runs the records() closure with the new value.
+                Action::make('showOpen')
+                    ->label(fn ($livewire) => 'Open (' . ($livewire->getTicketmateCounts()['open'] ?? 0) . ')')
+                    ->color(fn ($livewire) => ($livewire->ticketmateFilter ?? 'open') === 'open' ? 'primary' : 'gray')
+                    ->action(fn ($livewire) => $livewire->setTicketmateFilter('open')),
+                Action::make('showClosed')
+                    ->label(fn ($livewire) => 'Closed (' . ($livewire->getTicketmateCounts()['closed'] ?? 0) . ')')
+                    ->color(fn ($livewire) => ($livewire->ticketmateFilter ?? 'open') === 'closed' ? 'primary' : 'gray')
+                    ->action(fn ($livewire) => $livewire->setTicketmateFilter('closed')),
+                Action::make('showAll')
+                    ->label(fn ($livewire) => 'All (' . ($livewire->getTicketmateCounts()['all'] ?? 0) . ')')
+                    ->color(fn ($livewire) => ($livewire->ticketmateFilter ?? 'open') === 'all' ? 'primary' : 'gray')
+                    ->action(fn ($livewire) => $livewire->setTicketmateFilter('all')),
                 Action::make('refresh')
-                    ->label('Refresh from TicketMate')
+                    ->label('Refresh')
                     ->icon('heroicon-o-arrow-path')
+                    ->color('gray')
                     ->action(function () {
                         $cache = app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class);
                         $cache->bust();

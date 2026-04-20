@@ -23,6 +23,46 @@ class ListIssues extends ListRecords
     protected static string $resource = IssueResource::class;
 
     /**
+     * Lifecycle filter for TicketMate-mode listings. 'open' (default),
+     * 'closed', or 'all'. Reflected to the URL as ?state=… so deep-links
+     * are bookmarkable and a refresh keeps the user on the same view.
+     */
+    public string $ticketmateFilter = 'open';
+
+    /**
+     * @return array<string,array<string,string>|string>
+     */
+    protected function getQueryString(): array
+    {
+        // Don't include the default 'open' in the URL — keeps clean
+        // /admin/issues by default, switches to ?state=closed only when needed.
+        return [
+            'ticketmateFilter' => ['as' => 'state', 'except' => 'open'],
+        ];
+    }
+
+    public function setTicketmateFilter(string $filter): void
+    {
+        if (! in_array($filter, ['open', 'closed', 'all'], true)) return;
+        $this->ticketmateFilter = $filter;
+    }
+
+    /**
+     * Counts per filter bucket — used by the v3 Blade buttons and the
+     * v5 header actions to show "Open (12) / Closed (47) / All (59)".
+     *
+     * @return array{open:int,closed:int,all:int}
+     */
+    public function getTicketmateCounts(): array
+    {
+        $cache = app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class);
+        $all = $cache->all('all');
+        $closed = $all->filter(fn (array $r) => in_array($r['status'] ?? '', ['resolved', 'closed'], true))->count();
+        $total = $all->count();
+        return ['open' => $total - $closed, 'closed' => $closed, 'all' => $total];
+    }
+
+    /**
      * In Filament 3 we can't feed the table a cached array (no Table::records()),
      * so we render the TicketMate-cached issues via a custom Blade view that
      * bypasses the Filament table component. Filament 5 keeps using the
@@ -36,10 +76,12 @@ class ListIssues extends ListRecords
         return parent::getView();
     }
 
-    /** Used by the v3 custom Blade only. */
+    /** Used by the v3 custom Blade only. Filtered by $ticketmateFilter. */
     public function getTicketmateRows(): array
     {
-        return app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class)->all()->all();
+        return app(\D3vnz\IssueTracker\Services\TicketmateIssuesCache::class)
+            ->all($this->ticketmateFilter)
+            ->all();
     }
 
     /**

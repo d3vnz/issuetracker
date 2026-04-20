@@ -1,6 +1,8 @@
 <x-filament-panels::page>
     @php
         $rows = $this->getTicketmateRows();
+        $counts = $this->getTicketmateCounts();
+        $activeFilter = $this->ticketmateFilter ?? 'open';
         // Inline kind/state colour pairs — done as raw CSS rather than Tailwind
         // classes so this works regardless of whether the host app's Tailwind
         // build includes our package views in its content paths.
@@ -47,7 +49,13 @@
         .tm-list .tm-link     { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--tm-link); text-decoration: none; }
         .tm-list .tm-link:hover { color: var(--tm-link-hover); text-decoration: underline; }
         .tm-list .tm-link.tm-link-muted { color: var(--tm-fg-muted); margin-left: 8px; }
-        .tm-list .tm-toolbar  { display: flex; justify-content: flex-end; margin-bottom: 16px; }
+        .tm-list .tm-toolbar  { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; }
+        .tm-list .tm-tabs     { display: inline-flex; gap: 4px; padding: 4px; border-radius: 10px; background: var(--tm-bg-alt); border: 1px solid var(--tm-border); }
+        .tm-list .tm-tab      { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; color: var(--tm-fg-muted); background: transparent; border: 0; cursor: pointer; }
+        .tm-list .tm-tab:hover:not(.tm-tab-active) { color: var(--tm-fg); background: rgba(0,0,0,0.04); }
+        .dark .tm-list .tm-tab:hover:not(.tm-tab-active), [data-theme="dark"] .tm-list .tm-tab:hover:not(.tm-tab-active) { background: rgba(255,255,255,0.04); }
+        .tm-list .tm-tab-active { color: #ffffff; background: #2563eb; }
+        .tm-list .tm-tab-count { font-size: 11px; opacity: 0.75; font-variant-numeric: tabular-nums; }
         .tm-list .tm-btn      { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 8px; background: #2563eb; color: #ffffff; font-size: 14px; font-weight: 600; border: 0; cursor: pointer; }
         .tm-list .tm-btn:hover:not(:disabled) { background: #1d4ed8; }
         .tm-list .tm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -57,6 +65,20 @@
 
     <div class="tm-list">
         <div class="tm-toolbar">
+            <div class="tm-tabs" role="tablist">
+                @foreach (['open' => 'Open', 'closed' => 'Closed', 'all' => 'All'] as $key => $label)
+                    <button
+                        type="button"
+                        role="tab"
+                        wire:click="setTicketmateFilter('{{ $key }}')"
+                        class="tm-tab {{ $activeFilter === $key ? 'tm-tab-active' : '' }}"
+                        aria-selected="{{ $activeFilter === $key ? 'true' : 'false' }}"
+                    >
+                        {{ $label }}
+                        <span class="tm-tab-count">({{ $counts[$key] ?? 0 }})</span>
+                    </button>
+                @endforeach
+            </div>
             <button type="button" wire:click="refreshTicketmate" wire:loading.attr="disabled" class="tm-btn">
                 <svg style="width:16px;height:16px" wire:loading.remove wire:target="refreshTicketmate" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
                 <svg style="width:16px;height:16px" class="tm-spin" wire:loading wire:target="refreshTicketmate" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity:0.25"/><path fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" style="opacity:0.75"/></svg>
@@ -66,7 +88,15 @@
 
         <div class="tm-card">
             @if (empty($rows))
-                <div class="tm-empty">No issues yet. Issues created from this app via the Report-a-Bug modal will appear here.</div>
+                <div class="tm-empty">
+                    @if ($activeFilter === 'closed')
+                        No closed issues in TicketMate yet.
+                    @elseif ($activeFilter === 'all')
+                        No issues yet. Issues created from this app via the Report-a-Bug modal will appear here.
+                    @else
+                        No open issues. Switch to <strong>Closed</strong> or <strong>All</strong> to see resolved tickets.
+                    @endif
+                </div>
             @else
                 <table>
                     <thead>

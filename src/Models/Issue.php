@@ -141,6 +141,20 @@ class Issue extends Model
                     })
                     ->label('Issue Type')
                     ->options(function () {
+                        // In TicketMate-mode the consuming app has no GitHub
+                        // token / no repo of its own — TicketMate owns the
+                        // GitHub side. Fall back to the canonical kind list
+                        // (matches Ticket::KINDS on the TM side) so the
+                        // Select doesn't blow up trying to call GitHub.
+                        if (\D3vnz\IssueTracker\Services\TicketmateClient::isEnabled()) {
+                            return [
+                                'bug' => 'Bug',
+                                'feature' => 'Feature',
+                                'change' => 'Change',
+                                'question' => 'Question',
+                            ];
+                        }
+
                         $issue = new Issue();
                         $prefix = (string) config('issuetracker.statuses.prefix', 'status:');
                         return collect($issue->getLabels())

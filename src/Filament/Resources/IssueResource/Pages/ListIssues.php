@@ -14,6 +14,7 @@ use D3vnz\IssueTracker\Services\TicketmateClient;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ListRecords;
+use Filament\Tables\Table;
 
 class ListIssues extends ListRecords
 {
@@ -67,7 +68,7 @@ class ListIssues extends ListRecords
      */
     public function getView(): string
     {
-        if (TicketmateClient::isEnabled() && ! method_exists(\Filament\Tables\Table::class, 'records')) {
+        if ($this->isUsingV3CustomBladeView()) {
             return 'd3vnz-issuetracker::filament.list-issues-ticketmate-v3';
         }
         return parent::getView();
@@ -108,14 +109,41 @@ class ListIssues extends ListRecords
             ->send();
     }
 
+    /**
+     * Public method exposed so the v3 custom blade's
+     * wire:click="mountAction('createIssue')" can resolve the action via
+     * Filament's standard `{name}Action()` lookup. Without this, v3 was
+     * silently failing because the cached header-actions array wasn't
+     * being consulted by mountAction calls originating outside the
+     * native header button.
+     */
+    public function createIssueAction(): Action
+    {
+        return CreateIssueAction::make();
+    }
+
     protected function getHeaderActions(): array
     {
-        return [
-            // Always-visible — works in both TicketMate-mode (posts to the
-            // central API which creates the GitHub issue + Ticket) and
-            // local-only mode (direct GitHub push). Same modal as the
-            // floating IssueQuickAction so the UX is consistent.
-            CreateIssueAction::make(),
-        ];
+        // v3 path: render our own button inside the custom blade view
+        // (see list-issues-ticketmate-v3.blade.php toolbar) — returning
+        // the action here too would produce a duplicate "New Issue"
+        // button stacked above the toolbar.
+        if ($this->isUsingV3CustomBladeView()) {
+            return [];
+        }
+
+        // v5 path: native ListRecords header actions render the button.
+        return [CreateIssueAction::make()];
+    }
+
+    /**
+     * v3 mode AND TicketMate-mode means we route to the custom blade
+     * view via getView(). Same predicate used in getView() — kept here
+     * as a single source of truth so the two stay in lock-step.
+     */
+    protected function isUsingV3CustomBladeView(): bool
+    {
+        return TicketmateClient::isEnabled()
+            && ! method_exists(Table::class, 'records');
     }
 }

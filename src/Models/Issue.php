@@ -133,11 +133,13 @@ class Issue extends Model
                     ->required(),
                 Select::make('labels.name')
                     ->columnSpan(3)
+                    ->required()
+                    ->default('bug')
                     ->formatStateUsing(function (?Model $record) use ($issueType) {
                         if ($issueType) {
                             return $issueType;
                         }
-                        return $record->labels['name'] ?? null;
+                        return $record->labels['name'] ?? 'bug';
                     })
                     ->label('Issue Type')
                     ->options(function () {

@@ -79,11 +79,20 @@
                     </button>
                 @endforeach
             </div>
-            <button type="button" wire:click="refreshTicketmate" wire:loading.attr="disabled" class="tm-btn">
-                <svg style="width:16px;height:16px" wire:loading.remove wire:target="refreshTicketmate" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                <svg style="width:16px;height:16px" class="tm-spin" wire:loading wire:target="refreshTicketmate" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity:0.25"/><path fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" style="opacity:0.75"/></svg>
-                Refresh from TicketMate
-            </button>
+            <div style="display:flex;gap:8px">
+                {{-- Mounts the same Filament Action defined in
+                     ListIssues::getHeaderActions() — opens the standard
+                     "Report a bug / new issue" modal in both v3 and v5. --}}
+                <button type="button" wire:click="mountAction('createIssue')" class="tm-btn">
+                    <svg style="width:16px;height:16px" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                    New Issue
+                </button>
+                <button type="button" wire:click="refreshTicketmate" wire:loading.attr="disabled" class="tm-btn" style="background:#475569">
+                    <svg style="width:16px;height:16px" wire:loading.remove wire:target="refreshTicketmate" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                    <svg style="width:16px;height:16px" class="tm-spin" wire:loading wire:target="refreshTicketmate" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" style="opacity:0.25"/><path fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" style="opacity:0.75"/></svg>
+                    Refresh from TicketMate
+                </button>
+            </div>
         </div>
 
         <div class="tm-card">

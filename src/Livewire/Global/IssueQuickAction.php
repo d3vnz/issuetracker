@@ -6,18 +6,12 @@
 
 namespace D3vnz\IssueTracker\Livewire\Global;
 
-use D3vnz\IssueTracker\Mail\Issue\Confirmation;
-use D3vnz\IssueTracker\Mail\Issue\Notification as MailNotification;
-use D3vnz\IssueTracker\Models\Issue;
-use D3vnz\IssueTracker\Services\TicketmateClient;
-use D3vnz\IssueTracker\Services\TicketmateIssuesCache;
+use D3vnz\IssueTracker\Filament\Actions\CreateIssueAction;
 use Filament\Actions\Action;
 use Filament\Actions\Concerns\InteractsWithActions;
 use Filament\Actions\Contracts\HasActions;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
-use Filament\Notifications\Notification;
-use Illuminate\Support\Facades\Mail;
 use Livewire\Component;
 
 class IssueQuickAction extends Component implements HasActions, HasForms
@@ -27,76 +21,8 @@ class IssueQuickAction extends Component implements HasActions, HasForms
 
     public function createIssueAction(): Action
     {
-        return Action::make('createIssue')
-            ->modalHeading(fn (array $arguments) => 'Report ' . ucwords($arguments['type'] ?? 'an Issue'))
-            ->form(fn (array $arguments) => Issue::getForm($arguments['type'] ?? null))
-            ->action(function (array $data) {
-                $kind = $data['labels']['name'] ?? 'bug';
-                $user = auth()->user();
-                $creatorName = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: ($user->name ?? null);
-
-                if (TicketmateClient::isEnabled()) {
-                    // Centralised mode: TicketMate creates the GitHub issue with its own
-                    // token, then mirrors a Ticket. The consuming app needs no GITHUB_TOKEN.
-                    $created = (new TicketmateClient())->createIssue(
-                        title: $data['title'],
-                        body: $data['body'],
-                        kind: $kind,
-                        creatorEmail: $user?->email,
-                        creatorName: $creatorName,
-                        creatorAppUrl: config('app.url'),
-                    );
-
-                    if (! $created) {
-                        Notification::make()
-                            ->title('Could not create issue')
-                            ->body('TicketMate did not respond. Try again or contact support.')
-                            ->danger()
-                            ->send();
-                        return;
-                    }
-
-                    // Bust the cache so the next IssueResource render pulls fresh
-                    // from TicketMate (which now includes this new issue).
-                    app(TicketmateIssuesCache::class)->bust();
-                } else {
-                    // Local-only fallback: original GitHub-direct flow.
-                    $issue = new Issue();
-                    $res = $issue->createIssue([
-                        'title' => $data['title'],
-                        'body' => $data['body'],
-                        'assignees' => ['aotearoait'],
-                        'labels' => ['name' => $kind],
-                    ]);
-
-                    $record = Issue::create([
-                        'id' => $res['id'],
-                        'number' => $res['number'],
-                        'title' => $data['title'],
-                        'body' => $data['body'],
-                        'user_id' => $user?->id,
-                        'state' => $res['state'],
-                        'labels' => [
-                            'name' => $res['labels'][0]['name'] ?? 'bug',
-                            'color' => $res['labels'][0]['color'] ?? null,
-                            'id' => $res['labels'][0]['id'] ?? null,
-                        ],
-                    ]);
-
-                    if (! config('issuetracker.ai.enabled')) {
-                        Mail::to($user)->send(new Confirmation($user, $record));
-                    }
-                    Mail::to('joel@d3v.nz')->send(new MailNotification($user, $record, $res));
-                }
-
-                Notification::make()
-                    ->title('Your ' . ucwords($kind) . ' has been created')
-                    ->body(TicketmateClient::isEnabled()
-                        ? 'A developer will get back to you and you\'ll receive email updates as it progresses.'
-                        : 'A developer will respond to you if required and you will be notified via email as well of any updates.')
-                    ->success()
-                    ->send();
-            });
+        // Single source of truth — see CreateIssueAction.
+        return CreateIssueAction::make();
     }
 
     public function render()
